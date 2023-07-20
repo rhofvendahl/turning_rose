@@ -1,0 +1,42 @@
+#node modules
+node_modules/
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.bin
+.DS_Store
+.scalafmt.conf
+.metals
+
+# Test binary, build with `go test -c`
+*.test
+
+# Local development volumes, e.g., for mongo.
+.vscode
+.virtual_documents/
+.ipynb_checkpoints
+
+# Compiled files
+__pycache__
+
+# Packages/installer info
+*.egg
+*.egg-info
+
+# Files that contain local secrets
+.env
+
+# Build
+build/
+.build/
+
+# xcode stuff
+xcuserdata/
+
+# Other
+.DS_Store
+flask_session
