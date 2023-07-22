@@ -40,3 +40,6 @@ xcuserdata/
 # Other
 .DS_Store
 flask_session
+
+# Large files
+db/
