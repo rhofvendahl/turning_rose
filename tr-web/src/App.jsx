@@ -1,8 +1,8 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 
-import './App.css'
-import Model from './components/Model'
+import './App.css';
+import Model from './components/Model';
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
         <OrbitControls />
       </Canvas>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
