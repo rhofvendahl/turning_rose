@@ -43,3 +43,4 @@ flask_session
 
 # Large files
 db/
+data/
