@@ -1,4 +1,8 @@
-#canvas-container {
+#content-container {
   height: 100%;
   background-color: #1E1D22;
+}
+
+#controls-wrapper {
+  position: absolute;
 }
