@@ -1,0 +1,4 @@
+bpy
+fake-bpy-module-3.4
+numpy
+open3d

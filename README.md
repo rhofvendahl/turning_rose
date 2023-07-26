@@ -16,6 +16,16 @@ xcodebuild -scheme tr_photogrammetry -derivedDataPath ./build
 ./build/Build/Products/Debug/tr_photogrammetry
 ```
 
+## tr_scripts
+### Requirements
+- Install USDZ Tools ([here](https://developer.apple.com/augmented-reality/tools/)) \[or not actually]
+- Add to .zshrc or equivalent: \[or not actually]
+```
+export USDPYTHON=/Applications/usdpython
+export PATH=$PATH:$USDPYTHON/USD:$PATH:$USDPYTHON/usdzconvert
+export PYTHONPATH=$HOME/.pyenv/versions/3.7.16/bin/python:$USDPYTHON/USD/lib/python
+```
+
 ## tr-web
 ```
 cd tr-web
