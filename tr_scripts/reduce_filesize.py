@@ -10,15 +10,20 @@ MODEL_NAMES = [
 ]
 
 
-def decimate_obj(input_dir: str, output_dir: str, name: str, decimate_ratio: float):
+# NOTE: Apparently this does something needed by align even without decimate_ratio. I'm letting decimate
+# be optional for now, but some renaming/restructuring is in order, if there's gonna be a plain processing step.
+def decimate_obj(
+    input_dir: str, output_dir: str, name: str, decimate_ratio: float = None
+):
     # Load object
     bpy.ops.import_scene.obj(filepath=os.path.join(input_dir, f"{name}.obj"))
     obj = bpy.context.selected_objects[0]
 
-    # Apply decimate modifier
-    modifier: bpy.types.DecimateModifier = obj.modifiers.new("decimate", "DECIMATE")
-    modifier.ratio = decimate_ratio
-    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    if decimate_ratio != None:
+        # Apply decimate modifier
+        modifier: bpy.types.DecimateModifier = obj.modifiers.new("decimate", "DECIMATE")
+        modifier.ratio = decimate_ratio
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     # Export object
     bpy.ops.export_scene.obj(
@@ -46,47 +51,46 @@ def decimate_obj(input_dir: str, output_dir: str, name: str, decimate_ratio: flo
         file.write(content)
 
 
-# Decimate leaves a few lines between verticies, which apparently mess up obj files for some purposes. It's likely possible
-# to not create those lines, but easier IMO to just edit the obj.
-def remove_lines(filepath):
-    with open(filepath, "r") as f:
-        lines = f.readlines()
-
-    with open(filepath, "w") as f:
-        for line in lines:
-            if not line.startswith("l "):
-                f.write(line)
-
-
 def reduce_tex_size(filepath: str, new_size: int):
     pass
 
 
 # TODO: Refactor below (DRY it up)
+def main():
+    input_base = os.path.abspath("../data/models/obj/reduced")
+    output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
+    for name in MODEL_NAMES[:-1]:
+        input_dir = os.path.join(input_base, name)
+        output_dir = os.path.join(output_base, name)
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-input_base = os.path.abspath("../data/models/obj/reduced")
-output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
-for name in MODEL_NAMES[:-1]:
-    input_dir = os.path.join(input_base, name)
-    output_dir = os.path.join(output_base, name)
-    os.makedirs(input_dir, exist_ok=True)
-    os.makedirs(output_dir, exist_ok=True)
+        decimate_obj(input_dir, output_dir, name, 0.2)
 
-    decimate_obj(input_dir, output_dir, name, 0.2)
+        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 256)
 
-    remove_lines(os.path.join(output_dir, name + ".obj"))
+    output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
+    for name in MODEL_NAMES[-1:]:
+        input_dir = os.path.join(input_base, name)
+        output_dir = os.path.join(output_base, name)
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-    reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 256)
+        decimate_obj(input_dir, output_dir, name, 0.5)
 
-output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
-for name in MODEL_NAMES[-1:]:
-    input_dir = os.path.join(input_base, name)
-    output_dir = os.path.join(output_base, name)
-    os.makedirs(input_dir, exist_ok=True)
-    os.makedirs(output_dir, exist_ok=True)
+        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 512)
 
-    decimate_obj(input_dir, output_dir, name, 0.5)
+    output_base = os.path.abspath("../data/models/obj/reduced_same")
+    for name in MODEL_NAMES[-1:]:
+        input_dir = os.path.join(input_base, name)
+        output_dir = os.path.join(output_base, name)
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-    remove_lines(os.path.join(output_dir, name + ".obj"))
+        decimate_obj(input_dir, output_dir, name)
 
-    reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 512)
+        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 512)
+
+
+if __name__ == "__main__":
+    main()
