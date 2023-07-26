@@ -25,6 +25,9 @@ export USDPYTHON=/Applications/usdpython
 export PATH=$PATH:$USDPYTHON/USD:$PATH:$USDPYTHON/usdzconvert
 export PYTHONPATH=$HOME/.pyenv/versions/3.7.16/bin/python:$USDPYTHON/USD/lib/python
 ```
+- Install pyassimp (unless pyassimp with pip works for you) \[or actually maybe not?]
+  - https://github.com/assimp/assimp/blob/master/Build.md (build from source)
+  - https://github.com/assimp/assimp/tree/master/port/PyAssimp (install)
 
 ## tr-web
 ```
