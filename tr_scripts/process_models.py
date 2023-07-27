@@ -1,6 +1,7 @@
 import bpy
 import os
 import shutil
+from PIL import Image
 
 MODEL_NAMES = [
     "2023-07-19_19",
@@ -55,6 +56,13 @@ def reduce_tex_size(filepath: str, new_size: int = None):
     pass
 
 
+# I'm not entirely sure this is necessary, but a lot of this stuff can't handle alpha channel so can't hurt
+def create_jpg(dirpath: str):
+    img = Image.open(os.path.join(dirpath, "texgen_2.png"))
+    rgb_img = img.convert("RGB")
+    rgb_img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
+
+
 # Decimate leaves a few lines between verticies, which apparently mess up obj files for some purposes. It's likely possible
 # to not create those lines, but easier IMO to just edit the obj.
 # NOTE: This should eventually happen before reduce_filesize.py, after photogrammetry, along with conversion usdz to obj
@@ -74,7 +82,7 @@ def remove_lines_smoothing_watermark(input_dir, output_dir, name):
                 f.write(line)
 
 
-def do_the_things(input_base, output_base, names, decimate_ratio=None, new_size=None):
+def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=None):
     for name in names:
         input_dir = os.path.join(input_base, name)
         output_dir = os.path.join(output_base, name)
@@ -84,19 +92,20 @@ def do_the_things(input_base, output_base, names, decimate_ratio=None, new_size=
         decimate_obj(input_dir, output_dir, name, decimate_ratio)
         remove_lines_smoothing_watermark(input_dir, output_dir, name)
         reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), new_size)
+        create_jpg(output_dir)
 
 
 # TODO: Refactor below (DRY it up)
 def main():
     input_base = os.path.abspath("../data/models/obj/reduced")
     output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
-    do_the_things(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
+    run_pipeline(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
 
     output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
-    do_the_things(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
+    run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
     output_base = os.path.abspath("../data/models/obj/reduced_same")
-    do_the_things(input_base, output_base, MODEL_NAMES[-1:])
+    run_pipeline(input_base, output_base, MODEL_NAMES[-1:])
 
 
 if __name__ == "__main__":
