@@ -51,45 +51,52 @@ def decimate_obj(
         file.write(content)
 
 
-def reduce_tex_size(filepath: str, new_size: int):
+def reduce_tex_size(filepath: str, new_size: int = None):
     pass
+
+
+# Decimate leaves a few lines between verticies, which apparently mess up obj files for some purposes. It's likely possible
+# to not create those lines, but easier IMO to just edit the obj.
+# NOTE: This should eventually happen before reduce_filesize.py, after photogrammetry, along with conversion usdz to obj
+def remove_lines_smoothing_watermark(input_dir, output_dir, name):
+    with open(os.path.join(input_dir, name + ".obj"), "r") as f:
+        lines = f.readlines()
+
+    with open(os.path.join(output_dir, name + ".obj"), "w") as f:
+        for line in lines:
+            if line.startswith("o watermark"):
+                break
+            is_line = line.startswith("l ")
+            # NOTE: I'm removing smoothing because it causes problems in some places, but might be something I want elsewhere
+            # So, keep in mind
+            is_smoothing = line.startswith("s ")
+            if not is_line and not is_smoothing:
+                f.write(line)
+
+
+def do_the_things(input_base, output_base, names, decimate_ratio=None, new_size=None):
+    for name in names:
+        input_dir = os.path.join(input_base, name)
+        output_dir = os.path.join(output_base, name)
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
+
+        decimate_obj(input_dir, output_dir, name, decimate_ratio)
+        remove_lines_smoothing_watermark(input_dir, output_dir, name)
+        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), new_size)
 
 
 # TODO: Refactor below (DRY it up)
 def main():
     input_base = os.path.abspath("../data/models/obj/reduced")
     output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
-    for name in MODEL_NAMES[:-1]:
-        input_dir = os.path.join(input_base, name)
-        output_dir = os.path.join(output_base, name)
-        os.makedirs(input_dir, exist_ok=True)
-        os.makedirs(output_dir, exist_ok=True)
-
-        decimate_obj(input_dir, output_dir, name, 0.2)
-
-        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 256)
+    do_the_things(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
 
     output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
-    for name in MODEL_NAMES[-1:]:
-        input_dir = os.path.join(input_base, name)
-        output_dir = os.path.join(output_base, name)
-        os.makedirs(input_dir, exist_ok=True)
-        os.makedirs(output_dir, exist_ok=True)
-
-        decimate_obj(input_dir, output_dir, name, 0.5)
-
-        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 512)
+    do_the_things(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
     output_base = os.path.abspath("../data/models/obj/reduced_same")
-    for name in MODEL_NAMES[-1:]:
-        input_dir = os.path.join(input_base, name)
-        output_dir = os.path.join(output_base, name)
-        os.makedirs(input_dir, exist_ok=True)
-        os.makedirs(output_dir, exist_ok=True)
-
-        decimate_obj(input_dir, output_dir, name)
-
-        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), 512)
+    do_the_things(input_base, output_base, MODEL_NAMES[-1:])
 
 
 if __name__ == "__main__":
