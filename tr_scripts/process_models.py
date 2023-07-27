@@ -98,14 +98,14 @@ def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=N
 # TODO: Refactor below (DRY it up)
 def main():
     input_base = os.path.abspath("../data/models/obj/reduced")
-    output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
-    run_pipeline(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
+    # output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
+    # run_pipeline(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
 
-    output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
-    run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
+    # output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
+    # run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
     output_base = os.path.abspath("../data/models/obj/reduced_same")
-    run_pipeline(input_base, output_base, MODEL_NAMES[-1:])
+    run_pipeline(input_base, output_base, MODEL_NAMES[-2:])
 
 
 if __name__ == "__main__":
