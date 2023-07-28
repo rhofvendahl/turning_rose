@@ -66,19 +66,37 @@ def create_jpg(dirpath: str):
 # Decimate leaves a few lines between verticies, which apparently mess up obj files for some purposes. It's likely possible
 # to not create those lines, but easier IMO to just edit the obj.
 # NOTE: This should eventually happen before reduce_filesize.py, after photogrammetry, along with conversion usdz to obj
-def remove_lines_smoothing_watermark(input_dir, output_dir, name):
+def remove_lines_smoothing_normals_watermark(input_dir, output_dir, name):
     with open(os.path.join(input_dir, name + ".obj"), "r") as f:
         lines = f.readlines()
 
     with open(os.path.join(output_dir, name + ".obj"), "w") as f:
         for line in lines:
+            # Remove watermark, and everything that comes after
             if line.startswith("o watermark"):
                 break
-            is_line = line.startswith("l ")
-            # NOTE: I'm removing smoothing because it causes problems in some places, but might be something I want elsewhere
-            # So, keep in mind
-            is_smoothing = line.startswith("s ")
-            if not is_line and not is_smoothing:
+            # Remove normals
+            elif line.startswith("vn "):
+                continue
+
+            # Remove lines
+            elif line.startswith("l "):
+                continue
+
+            # Remove smoothing
+            elif line.startswith("s "):
+                continue
+
+            # Remove normals from faces
+            elif line.startswith("f "):
+                split_ws = line.split()
+                new_verts = []
+                for vert in split_ws[1:]:
+                    # Third value is the idx of normal
+                    new_verts.append("/".join(vert.split("/")[:-1]))
+                new_line = f"f {' '.join(new_verts)}\n"
+                f.write(new_line)
+            else:
                 f.write(line)
 
 
@@ -90,7 +108,7 @@ def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=N
         os.makedirs(output_dir, exist_ok=True)
 
         decimate_obj(input_dir, output_dir, name, decimate_ratio)
-        remove_lines_smoothing_watermark(input_dir, output_dir, name)
+        remove_lines_smoothing_normals_watermark(input_dir, output_dir, name)
         reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), new_size)
         create_jpg(output_dir)
 
@@ -104,7 +122,7 @@ def main():
     # output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
     # run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
-    output_base = os.path.abspath("../data/models/obj/reduced_same")
+    output_base = os.path.abspath("../data/models/obj/reduced_processed")
     run_pipeline(input_base, output_base, MODEL_NAMES[-2:])
 
 
