@@ -43,34 +43,43 @@ def decimate_obj(
                     output_dir,
                 )
 
-    # Replace absolute path with relative (not ideal but I expect a lot will change when I implement the full pipeline)
-    mtl_filepath = os.path.join(output_dir, f"{name}.mtl")
-    with open(mtl_filepath, "r") as file:
-        content = file.read()
-    content = content.replace(input_dir + "/", "")
-    with open(mtl_filepath, "w") as file:
-        file.write(content)
 
-
+# TODO: Combine this with editing mtl img path, editing mtl to be jpg, creating jpg, deleting png, reducing tex size
 def reduce_tex_size(filepath: str, new_size: int = None):
     pass
 
 
-# I'm not entirely sure this is necessary, but a lot of this stuff can't handle alpha channel so can't hurt
-def create_jpg(dirpath: str):
+# TODO: Explore jpg compression
+def process_image(dirpath: str, name: str, new_size: int = None):
     img = Image.open(os.path.join(dirpath, "texgen_2.png"))
-    rgb_img = img.convert("RGB")
-    rgb_img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
+    img = img.convert("RGB")
+    if new_size:
+        img = img.resize((new_size, new_size))
+    img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
+
+    mtl_filepath = os.path.join(dirpath, f"{name}.mtl")
+    with open(mtl_filepath, "r") as f:
+        lines = f.readlines()
+
+    with open(mtl_filepath, "w") as f:
+        for line in lines:
+            if line.startswith("map_"):
+                line = line.replace(".png", ".jpg")
+            if "/" in line:
+                # Replace absolute path with relative, and .png with .jpg
+                parts = line.split("/")
+                line = parts[0] + parts[-1]
+            f.write(line)
 
 
 # Decimate leaves a few lines between verticies, which apparently mess up obj files for some purposes. It's likely possible
 # to not create those lines, but easier IMO to just edit the obj.
-# NOTE: This should eventually happen before reduce_filesize.py, after photogrammetry, along with conversion usdz to obj
-def remove_lines_smoothing_normals_watermark(input_dir, output_dir, name):
-    with open(os.path.join(input_dir, name + ".obj"), "r") as f:
+# NOTE: This modifies in place, after rest of pipeliene, so it doesn't overwrite it by copying over again
+def remove_lines_smoothing_normals_watermark(dirpath, name):
+    with open(os.path.join(dirpath, name + ".obj"), "r") as f:
         lines = f.readlines()
 
-    with open(os.path.join(output_dir, name + ".obj"), "w") as f:
+    with open(os.path.join(dirpath, name + ".obj"), "w") as f:
         for line in lines:
             # Remove watermark, and everything that comes after
             if line.startswith("o watermark"):
@@ -108,22 +117,22 @@ def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=N
         os.makedirs(output_dir, exist_ok=True)
 
         decimate_obj(input_dir, output_dir, name, decimate_ratio)
-        remove_lines_smoothing_normals_watermark(input_dir, output_dir, name)
-        reduce_tex_size(os.path.join(output_dir, "texgen_2.png"), new_size)
-        create_jpg(output_dir)
+        remove_lines_smoothing_normals_watermark(output_dir, name)  # Modifies in place
+        process_image(output_dir, name, new_size)
 
 
 # TODO: Refactor below (DRY it up)
 def main():
-    input_base = os.path.abspath("../data/models/obj/reduced")
+    input_base = os.path.abspath("../data/models/obj/reduced")  # Has blender 3.5.1
     # output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
     # run_pipeline(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
 
     # output_base = os.path.abspath("../data/models/obj/reduced_decp5_512")
     # run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
+    # empty processing = blender 3.5.1 (copied from "/reduced")
     output_base = os.path.abspath("../data/models/obj/reduced_processed")
-    run_pipeline(input_base, output_base, MODEL_NAMES[-2:])
+    run_pipeline(input_base, output_base, MODEL_NAMES[-2:], 0.5, 1600)
 
 
 if __name__ == "__main__":
