@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import numpy as np
 import open3d as o3d
@@ -7,14 +6,11 @@ from PIL import Image
 from scipy.spatial.transform import Rotation
 from scipy.optimize import least_squares
 
-from matplotlib import colors
+from matplotlib import colors as plt_colors
 
-NAMES = [
-    "2023-07-19_19",
-    "2023-07-20_01",
-    "2023-07-20_07",
-    "2023-07-20_13_final",
-]
+from constants import NAMES, PROCESSED_BASE, ALIGNED_BASE
+
+# from utils import copy_assets
 
 
 # NOTE: There's a discrepancy bn o3d and raw where o3d has 4 fewer vertices. Also o3d doesn't do uv well. So, raw it is.
@@ -154,7 +150,7 @@ def filter_by_hsv(pcd, target, tolerances):
     rgb_colors = np.asarray(pcd.colors)
 
     # Convert RGB to HSV
-    hsv_colors = colors.rgb_to_hsv(rgb_colors)
+    hsv_colors = plt_colors.rgb_to_hsv(rgb_colors)
 
     # Filter the points
     filtered_points = []
@@ -234,7 +230,7 @@ def get_ball_pcd(pcd, color_str):
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
     pcd = lop(pcd, 0.8, 0.1)
-    print(f"{color_str.upper()} LOPPED", pcd)
+    # print(f"{color_str.upper()} LOPPED", pcd)
 
     if color_str == "red":
         pcd = filter_red(pcd)
@@ -242,10 +238,10 @@ def get_ball_pcd(pcd, color_str):
         pcd = filter_blue(pcd)
     elif color_str == "yellow":
         pcd = filter_yellow(pcd)
-    print(f"{color_str.upper()} FILTERED", pcd)
+    # print(f"{color_str.upper()} FILTERED", pcd)
 
     pcd = remove_outliers(pcd, 15)
-    print(f"{color_str.upper()} CLEANED", pcd)
+    # print(f"{color_str.upper()} CLEANED", pcd)
 
     return pcd
 
@@ -360,11 +356,6 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
     return pcd
 
 
-def copy_assets(input_dirpath, output_dirpath, name):
-    shutil.copy(os.path.join(input_dirpath, name + ".mtl"), output_dirpath)
-    shutil.copy(os.path.join(input_dirpath, "texgen_2.jpg"), output_dirpath)
-
-
 # Afaik open3d save to obj involves converting to triangle mesh, which unfortunately musses things up. Hence this approach.
 def save_pcd(pcd, input_dirpath, output_dirpath, name, with_assets=True):
     os.makedirs(output_dirpath, exist_ok=True)
@@ -384,18 +375,14 @@ def save_pcd(pcd, input_dirpath, output_dirpath, name, with_assets=True):
             else:
                 f.write(input_line)
 
-    if with_assets:
-        copy_assets(input_dirpath, output_dirpath, name)
 
-
-def main():
-    ref_name = NAMES[-1]
-    ref_dirpath = os.path.abspath(
-        os.path.join("../data/models/obj/processed", ref_name)
-    )
-    ref_output_dirpath = os.path.abspath(
-        os.path.join("../data/models/obj/aligned", ref_name)
-    )
+def align_models(
+    input_base: str,
+    output_base: str,
+    ref_name: str,
+    names: list[str],
+):
+    ref_dirpath = os.path.join(input_base, ref_name)
 
     ref_pcd = get_point_cloud(ref_dirpath, ref_name)
     ref_markers = get_markers(ref_pcd)
@@ -405,16 +392,12 @@ def main():
     # ref_pcd = ref_pcd_centered
     # ref_markers = ref_markers_centered
 
-    save_pcd(ref_pcd, ref_dirpath, ref_output_dirpath, ref_name)
-
-    NAMES = NAMES[:-1]
-    for align_name in NAMES:
-        align_dirpath = os.path.abspath(
-            os.path.join("../data/models/obj/processed", align_name)
-        )
-        align_output_dirpath = os.path.abspath(
-            os.path.join("../data/models/obj/aligned", align_name)
-        )
+    print(f"ALIGNING (with {ref_name})")
+    for i, align_name in enumerate(names):
+        print(i, align_name)
+        align_dirpath = os.path.join(input_base, align_name)
+        align_output_dirpath = os.path.join(output_base, align_name)
+        os.makedirs(align_output_dirpath, exist_ok=True)
 
         align_pcd = get_point_cloud(align_dirpath, align_name)
 
@@ -423,7 +406,9 @@ def main():
         align_model(align_pcd, align_markers, ref_markers, inplace=True)
 
         save_pcd(align_pcd, align_dirpath, align_output_dirpath, align_name)
+    print()
 
 
 if __name__ == "__main__":
-    main()
+    align_models(PROCESSED_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
+    # copy_assets(PROCESSED_BASE, ALIGNED_BASE, NAMES)
