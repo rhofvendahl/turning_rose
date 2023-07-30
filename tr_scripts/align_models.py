@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import open3d as o3d
@@ -7,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from matplotlib import colors
 
-MODEL_NAMES = [
+align_NAMES = [
     "2023-07-19_19",
     "2023-07-20_01",
     "2023-07-20_07",
@@ -223,8 +224,11 @@ def get_blue(pcd):
 def get_yellow(pcd):
     # Yellow pretty finicky, the color of the ball is shared by a lot of ground and leaf points.
     # Isolating the ball at all relies heavily on lop to remove ground and plant
-    target = [45 / 360.0, 55 / 100.0, 65 / 100.0]
-    tolerances = [15 / 360.0, 45 / 100.0, 35 / 100.0]
+    # target = [45 / 360.0, 55 / 100.0, 65 / 100.0]
+    # tolerances = [15 / 360.0, 45 / 100.0, 35 / 100.0]
+
+    target = [45 / 360.0, 60 / 100.0, 70 / 100.0]
+    tolerances = [15 / 360.0, 40 / 100.0, 30 / 100.0]
 
     return filter_by_hsv(pcd, target, tolerances)
 
@@ -239,7 +243,7 @@ def get_ball_pcd(pcd, color_str):
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
     pcd = lop(pcd, 0.8, 0.1)
-    print("CLOUD LOPPED", pcd)
+    print(f"{color_str.upper()} LOPPED", pcd)
 
     if color_str == "red":
         pcd = get_red(pcd)
@@ -247,10 +251,11 @@ def get_ball_pcd(pcd, color_str):
         pcd = get_blue(pcd)
     elif color_str == "yellow":
         pcd = get_yellow(pcd)
-    print("CLOUD FILTERED", color_str, pcd)
+    print(f"{color_str.upper()} FILTERED", pcd)
 
     pcd = remove_outliers(pcd, 15)
-    print("CLOUD CLEANED", pcd)
+    # o3d.visualization.draw_geometries([pcd])
+    print(f"{color_str.upper()} CLEANED", pcd)
 
     return pcd
 
@@ -270,12 +275,12 @@ def get_markers(pcd):
 
 
 # Translate model so that markers center is at origin, and rotate it so that they're flat against the xz plane; return new pcd and markers
-def center_model(pcd, markers):
-    # Otherwise this modifies original
-    new_pcd = o3d.geometry.PointCloud()
-    new_pcd.points = pcd.points
-    new_pcd.colors = pcd.colors
-    pcd = new_pcd
+def center_model(pcd, markers, inplace=False):
+    if not inplace:
+        new_pcd = o3d.geometry.PointCloud()
+        new_pcd.points = pcd.points
+        new_pcd.colors = pcd.colors
+        pcd = new_pcd
 
     p1 = markers[0]
     p2 = markers[1]
@@ -313,12 +318,54 @@ def center_model(pcd, markers):
     return pcd, np.array([new_p1, new_p2, new_p3])
 
 
-def get_aligned_pcd(ref_pcd, ref_markers, align_pcd, align_markers):
-    pass
+def align_model(pcd, align_markers, ref_markers, inplace=False):
+    if not inplace:
+        new_pcd = o3d.geometry.PointCloud()
+        new_pcd.points = pcd.points
+        new_pcd.colors = pcd.colors
+        pcd = new_pcd
+
+    align_centroid = np.mean(align_markers, axis=0)
+    ref_centroid = np.mean(ref_markers, axis=0)
+
+    align_markers_centered = align_markers - align_centroid
+    ref_markers_centered = ref_markers - ref_centroid
+
+    # [Onward I don't really get]
+
+    # Compute H, cross-covariance matrix
+    H = np.dot(align_markers_centered.T, ref_markers_centered)
+
+    # Compute the Singular Value Decompositin to get U ()
+    U, S, Vt = np.linalg.svd(H)
+
+    # Compute the rotation matrix R
+    R = np.dot(Vt.T, U.T)
+
+    # Correct for reflection
+    if np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = np.dot(Vt.T, U.T)
+
+    # Compute the translation vector t
+    t = ref_centroid - np.dot(R, align_centroid)
+
+    # Apply the transformation to the point cloud
+    transformation = np.eye(4)
+    transformation[:3, :3] = R
+    transformation[:3, 3] = t
+
+    pcd.transform(transformation)
+    return pcd
+
+
+def copy_assets(input_dirpath, output_dirpath, name):
+    shutil.copy(os.path.join(input_dirpath, name + ".mtl"), output_dirpath)
+    shutil.copy(os.path.join(input_dirpath, "texgen_2.jpg"), output_dirpath)
 
 
 # Afaik open3d save to obj involves converting to triangle mesh, which unfortunately musses things up. Hence this approach.
-def save_pcd(pcd, input_dirpath, output_dirpath, name):
+def save_pcd(pcd, input_dirpath, output_dirpath, name, with_assets=True):
     os.makedirs(output_dirpath, exist_ok=True)
 
     with open(os.path.join(input_dirpath, name + ".obj"), "r") as f:
@@ -329,7 +376,6 @@ def save_pcd(pcd, input_dirpath, output_dirpath, name):
     with open(os.path.join(output_dirpath, name + ".obj"), "w") as f:
         for input_line in input_lines:
             if input_line.startswith("v "):
-                vals = input_line.split()[1:]
                 new_vals = [str(val) for val in vertices[vertex_i]]
                 new_line = f"v {' '.join(new_vals)}\n"
                 f.write(new_line)
@@ -337,57 +383,46 @@ def save_pcd(pcd, input_dirpath, output_dirpath, name):
             else:
                 f.write(input_line)
 
+    if with_assets:
+        copy_assets(input_dirpath, output_dirpath, name)
+
 
 def main():
-    ref_name = MODEL_NAMES[-1]
+    ref_name = align_NAMES[-1]
     ref_dirpath = os.path.abspath(
-        os.path.join("../data/models/obj/reduced_processed", ref_name)
+        os.path.join("../data/models/obj/processed", ref_name)
     )
     ref_output_dirpath = os.path.abspath(
-        os.path.join("../data/models/obj/reduced_aligned", ref_name)
+        os.path.join("../data/models/obj/aligned", ref_name)
     )
 
     ref_pcd = get_point_cloud(ref_dirpath, ref_name)
     ref_markers = get_markers(ref_pcd)
-    # red = get_ball_pcd(ref_pcd, "red")
-    # blue = get_ball_pcd(ref_pcd, "blue")
-    # yellow = get_ball_pcd(ref_pcd, "yellow")
 
-    ref_pcd_centered, ref_markers_centered = center_model(ref_pcd, ref_markers)
-    ref_pcd = ref_pcd_centered
-    ref_markers = ref_markers_centered
-    # o3d.visualization.draw_geometries(
-    #     [
-    #         ref_pcd,
-    #         ref_pcd_centered,
-    #         # red,
-    #         # blue,
-    #         # yellow,
-    #     ],
-    # )
+    # NOTE: Centering needs some debugging to work with align, and I'm honestly not even sure I want it so just gonna leave it here
+    # ref_pcd_centered, ref_markers_centered = center_model(ref_pcd, ref_markers)
+    # ref_pcd = ref_pcd_centered
+    # ref_markers = ref_markers_centered
 
-    # red = get_ball_pcd(name, dirpath, "red")
-    # blue = get_ball_pcd(name, dirpath, "blue")
-    # yellow = get_ball_pcd(name, dirpath, "yellow")
-    # o3d.visualization.draw_geometries([red, blue, yellow])
+    save_pcd(ref_pcd, ref_dirpath, ref_output_dirpath, ref_name)
 
-    save_pcd(ref_pcd_centered, ref_dirpath, ref_output_dirpath, ref_name)
+    align_names = align_NAMES[:-1]
+    for align_name in align_names:
+        align_dirpath = os.path.abspath(
+            os.path.join("../data/models/obj/processed", align_name)
+        )
+        align_output_dirpath = os.path.abspath(
+            os.path.join("../data/models/obj/aligned", align_name)
+        )
 
-    # align_names = MODEL_NAMES[-2:-1]
-    # for align_name in align_names:
-    #     align_dirpath = os.path.abspath(
-    #         os.path.join("../data/models/obj/reduced_processed", align_name)
-    #     )
-    #     align_output_dirpath = os.path(
-    #         os.path.join("../data/models/obj/reduced_aligned", align_name)
-    #     )
+        align_pcd = get_point_cloud(align_dirpath, align_name)
 
-    #     align_pcd = get_point_cloud(align_dirpath, align_name)
-    #     align_markers = get_markers(align_pcd)
+        align_markers = get_markers(align_pcd)
 
-    #     aligned_pcd = get_aligned_pcd(ref_pcd, ref_markers, align_pcd, align_markers)
+        align_model(align_pcd, align_markers, ref_markers, inplace=True)
+        # o3d.visualization.draw_geometries([ref_pcd, aligned_pcd])
 
-    #     save_pcd(aligned_pcd, os.path.join(align_output_dirpath, align_name))
+        save_pcd(align_pcd, align_dirpath, align_output_dirpath, align_name)
 
 
 if __name__ == "__main__":
