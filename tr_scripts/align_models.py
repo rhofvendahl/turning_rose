@@ -5,10 +5,11 @@ import numpy as np
 import open3d as o3d
 from PIL import Image
 from scipy.spatial.transform import Rotation
+from scipy.optimize import least_squares
 
 from matplotlib import colors
 
-align_NAMES = [
+NAMES = [
     "2023-07-19_19",
     "2023-07-20_01",
     "2023-07-20_07",
@@ -182,23 +183,13 @@ def filter_by_hsv(pcd, target, tolerances):
 
 
 def remove_outliers(pcd, neighbors):
-    # Relative redius calculation not possible with lop, unfortunately
-    # # Get y range
-    # pcd_np = np.asarray(pcd.points)
-    # min_y = np.min(pcd_np[:, 1])
-    # max_y = np.max(pcd_np[:, 1])
-
-    # # Ball has diameter of roughly .074 in a model of height ~1.17
-    # # In this system a reasonable radius would be .06, so calculate that equivalent (in case model size changes)
-    # radius = (max_y - min_y) * 0.05
-
     # Second return value is a point cloud containing removed values
     # cleaned, _ = pcd.remove_statistical_outlier(nb_neighbors=6, std_ratio=2.0)
     cleaned, _ = pcd.remove_radius_outlier(nb_points=neighbors, radius=0.075)
     return cleaned
 
 
-def get_red(pcd):
+def filter_red(pcd):
     # Red is do-able without lop, but lop allows safe inclusion of more points.
 
     # Good without lop:
@@ -213,7 +204,7 @@ def get_red(pcd):
     return red_pcd
 
 
-def get_blue(pcd):
+def filter_blue(pcd):
     # Blue is super easy, and works with or without lop
     target = [210 / 360.0, 70 / 100.0, 60 / 100.0]
     tolerances = [30 / 360.0, 30 / 100.0, 40 / 100.0]
@@ -221,7 +212,7 @@ def get_blue(pcd):
     return filter_by_hsv(pcd, target, tolerances)
 
 
-def get_yellow(pcd):
+def filter_yellow(pcd):
     # Yellow pretty finicky, the color of the ball is shared by a lot of ground and leaf points.
     # Isolating the ball at all relies heavily on lop to remove ground and plant
     # target = [45 / 360.0, 55 / 100.0, 65 / 100.0]
@@ -246,24 +237,34 @@ def get_ball_pcd(pcd, color_str):
     print(f"{color_str.upper()} LOPPED", pcd)
 
     if color_str == "red":
-        pcd = get_red(pcd)
+        pcd = filter_red(pcd)
     elif color_str == "blue":
-        pcd = get_blue(pcd)
+        pcd = filter_blue(pcd)
     elif color_str == "yellow":
-        pcd = get_yellow(pcd)
+        pcd = filter_yellow(pcd)
     print(f"{color_str.upper()} FILTERED", pcd)
 
     pcd = remove_outliers(pcd, 15)
-    # o3d.visualization.draw_geometries([pcd])
     print(f"{color_str.upper()} CLEANED", pcd)
 
     return pcd
 
 
+# Another one from chatgpt
 def get_center(pcd):
     points = np.asarray(pcd.points)
-    center = points.mean(axis=0)
-    return center
+
+    # Mean is a reasonable guess as to center
+    initial_guess = points.mean(axis=0)
+    # Actual radius is ~.075, but this works better
+    known_radius = 0.04
+
+    def cost_function(center, points, radius):
+        residuals = np.linalg.norm(points - center, axis=1) - radius
+        return residuals
+
+    result = least_squares(cost_function, initial_guess, args=(points, known_radius))
+    return result.x
 
 
 def get_markers(pcd):
@@ -388,7 +389,7 @@ def save_pcd(pcd, input_dirpath, output_dirpath, name, with_assets=True):
 
 
 def main():
-    ref_name = align_NAMES[-1]
+    ref_name = NAMES[-1]
     ref_dirpath = os.path.abspath(
         os.path.join("../data/models/obj/processed", ref_name)
     )
@@ -406,8 +407,8 @@ def main():
 
     save_pcd(ref_pcd, ref_dirpath, ref_output_dirpath, ref_name)
 
-    align_names = align_NAMES[:-1]
-    for align_name in align_names:
+    NAMES = NAMES[:-1]
+    for align_name in NAMES:
         align_dirpath = os.path.abspath(
             os.path.join("../data/models/obj/processed", align_name)
         )
@@ -420,7 +421,6 @@ def main():
         align_markers = get_markers(align_pcd)
 
         align_model(align_pcd, align_markers, ref_markers, inplace=True)
-        # o3d.visualization.draw_geometries([ref_pcd, aligned_pcd])
 
         save_pcd(align_pcd, align_dirpath, align_output_dirpath, align_name)
 
