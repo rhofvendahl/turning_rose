@@ -1,7 +1,5 @@
 import bpy
 import os
-import shutil
-from PIL import Image
 
 MODEL_NAMES = [
     "2023-07-19_19",
@@ -21,12 +19,12 @@ def convert(input_dir: str, output_dir: str, name: str):
 
 
 def main():
-    for name in MODEL_NAMES[-2:]:
+    for name in MODEL_NAMES[:]:
         input_dir = os.path.join(
-            os.path.abspath("../data/models/obj/reduced_processed"),
+            os.path.abspath("../data/models/obj/aligned"),
             name,
         )
-        output_dir = os.path.abspath("../tr-web/public/db/gltf_auto")
+        output_dir = os.path.abspath("../tr-web/public/db/aligned")
         os.makedirs(input_dir, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
