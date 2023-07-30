@@ -44,18 +44,16 @@ def decimate_obj(
                 )
 
 
-# TODO: Combine this with editing mtl img path, editing mtl to be jpg, creating jpg, deleting png, reducing tex size
-def reduce_tex_size(filepath: str, new_size: int = None):
-    pass
-
-
 # TODO: Explore jpg compression
-def process_image(dirpath: str, name: str, new_size: int = None):
+def process_image(dirpath: str, name: str, new_size: int = None, to_jpg=False):
     img = Image.open(os.path.join(dirpath, "texgen_2.png"))
-    img = img.convert("RGB")
     if new_size:
         img = img.resize((new_size, new_size))
-    img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
+    if to_jpg:
+        img = img.convert("RGB")
+        img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
+    else:
+        img.save(os.path.join(dirpath, "texgen_2.png"), "PNG")
 
     mtl_filepath = os.path.join(dirpath, f"{name}.mtl")
     with open(mtl_filepath, "r") as f:
@@ -63,10 +61,10 @@ def process_image(dirpath: str, name: str, new_size: int = None):
 
     with open(mtl_filepath, "w") as f:
         for line in lines:
-            if line.startswith("map_"):
+            if to_jpg and line.startswith("map_"):
                 line = line.replace(".png", ".jpg")
             if "/" in line:
-                # Replace absolute path with relative, and .png with .jpg
+                # Replace absolute path with relative
                 parts = line.split("/")
                 line = parts[0] + parts[-1]
             f.write(line)
@@ -109,6 +107,9 @@ def remove_lines_smoothing_normals_watermark(dirpath, name):
                 f.write(line)
 
 
+# For realism: decimate .5, size 1024 (more doesn't really do more)
+# For game model: decimate .5, size 256 (.3 works, as a small compromise)
+# For abstract: decimate .3, size 128 (.5 for a softer look but not much better imo)
 def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=None):
     for name in names:
         input_dir = os.path.join(input_base, name)
@@ -118,12 +119,12 @@ def run_pipeline(input_base, output_base, names, decimate_ratio=None, new_size=N
 
         decimate_obj(input_dir, output_dir, name, decimate_ratio)
         remove_lines_smoothing_normals_watermark(output_dir, name)  # Modifies in place
-        process_image(output_dir, name, new_size)
+        process_image(output_dir, name, new_size, True)
 
 
 # TODO: Refactor below (DRY it up)
 def main():
-    input_base = os.path.abspath("../data/models/obj/reduced")  # Has blender 3.5.1
+    input_base = os.path.abspath("../data/models/obj/blender_export")
     # output_base = os.path.abspath("../data/models/obj/reduced_decp2_256")
     # run_pipeline(input_base, output_base, MODEL_NAMES[:-1], 0.2, 256)
 
@@ -131,9 +132,11 @@ def main():
     # run_pipeline(input_base, output_base, MODEL_NAMES[-1:], 0.5, 512)
 
     # empty processing = blender 3.5.1 (copied from "/reduced")
-    output_base = os.path.abspath("../data/models/obj/reduced_processed")
-    run_pipeline(input_base, output_base, MODEL_NAMES[-2:], 0.5, 1600)
+    output_base = os.path.abspath("../data/models/obj/processed")
+    run_pipeline(input_base, output_base, MODEL_NAMES[:])
 
 
 if __name__ == "__main__":
     main()
+
+# TODO: line this all up logically OR export all these as individual scripts, along with a "pipeline" path
