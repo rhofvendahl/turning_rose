@@ -11,6 +11,7 @@ def convert(input_dir: str, output_dir: str, name: str):
         filepath=os.path.join(output_dir, f"{name}.gltf"),
         use_selection=True,
         export_format="GLTF_EMBEDDED",
+        export_normals=False,
     )
 
 
