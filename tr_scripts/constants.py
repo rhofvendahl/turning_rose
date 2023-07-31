@@ -13,17 +13,13 @@ NAMES = [
 
 BLENDER_EXPORT_BASE = "../data/models/obj/blender_export"
 
-# For now all processing should be done in the same directory, to save space
-# PROCESSED_BASE = "../data/models/obj/processed"
-# ALIGNED_BASE = "../data/models/obj/aligned"
-# DECIMATED_BASE = "../data/models/obj/decimated"
-
 # TODO:Probably time for a new approach
-PREPARED_BASE = "../data/models/obj/intermediate"
 ALIGNED_BASE = "../data/models/obj/intermediate"
-FILTERED_BASE = "../data/models/obj/intermediate"
+CLEANED_BASE = "../data/models/obj/intermediate"
 DECIMATED_BASE = "../data/models/obj/intermediate"
-RETEXTURED_BASE = "../data/models/obj/intermediate"
 
 GLTF_DIR = "../tr-web/public/db/gltf/auto"
 INDEX_FILEPATH = "../tr-web/src/assets/json/modelPaths.json"
+
+# Useful:
+# python align_models.py && python clean_models.py && python decimate_models.py && python export_gltf.py
