@@ -11,7 +11,7 @@ from matplotlib import colors as plt_colors
 from constants import NAMES, PREPARED_BASE, ALIGNED_BASE
 
 
-# NOTE: There's a discrepancy bn o3d and raw where o3d has 4 fewer vertices. Also o3d doesn't do uv well. So, raw it is.
+# o3d.read_triangle_mesh doesn't grab colors
 def get_point_cloud(dirpath: str, name: str):
     with open(os.path.join(dirpath, name + ".obj"), "r") as f:
         lines = f.readlines()
@@ -41,10 +41,7 @@ def get_point_cloud(dirpath: str, name: str):
     img = Image.open(os.path.join(dirpath, "texgen_2.png"))
     img_width, img_height = img.size
     img_data = np.array(img)
-    # Drop alpha channel
-    # print("IMG DATA PRE", type(img_data), img_data[0])
-    # img_data = img_data[:, :3]
-    # print("IMG DATA POST", type(img_data), img_data[0])
+
     colors = []
     black = np.array([0.0, 0.0, 0.0])
     for i, _ in enumerate(vertices):
