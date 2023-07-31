@@ -1,3 +1,4 @@
+import { Mesh } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export interface Frame {
@@ -34,6 +35,20 @@ interface Params {
   setCurrentFrame: (x: any) => void;
 }
 
+// Modifies model inplace
+const configureModel = (model: GLTF) => {
+  model.scene.traverse((child) => {
+    // Harmless due to isMesh check, and necessary to quiet ts errors
+    let mesh = child as Mesh;
+    if (mesh.isMesh) {
+      let material = mesh.material;
+      if (!Array.isArray(material)) {
+        material.transparent = true;
+      }
+    }
+  })
+}
+
 const loadNext = async ({ frames, currentFrame, setCurrentFrame }: Params) => {
   const loader = new GLTFLoader();
   
@@ -41,7 +56,9 @@ const loadNext = async ({ frames, currentFrame, setCurrentFrame }: Params) => {
   // There's a clever way to use a for loop, but I was finding it confusing
   while (nextIndex !== null) {
     const nextFrame = frames[nextIndex];
-    nextFrame.model = await loader.loadAsync(nextFrame.path);
+    const model = await loader.loadAsync(nextFrame.path);
+    configureModel(model);
+    nextFrame.model = model;
     if (currentFrame === null) {
       setCurrentFrame(nextFrame);
       currentFrame = nextFrame;
