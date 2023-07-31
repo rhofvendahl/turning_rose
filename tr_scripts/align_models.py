@@ -8,7 +8,8 @@ from scipy.optimize import least_squares
 
 from matplotlib import colors as plt_colors
 
-from constants import NAMES, PREPARED_BASE, ALIGNED_BASE
+from constants import NAMES, BLENDER_EXPORT_BASE, ALIGNED_BASE
+from utils import copy_assets
 
 
 # o3d.read_triangle_mesh doesn't grab colors
@@ -19,15 +20,19 @@ def get_point_cloud(dirpath: str, name: str):
     vertices = []
     uvs = []
     for line in lines:
+        # There's a weird section after the watermark. process_obj removes it, but best not to rely on that.
+        if line.startswith("o watermark"):
+            break
         if line.startswith("v "):
             vertex = [float(val) for val in line.split()[1:4]]
             vertices.append(np.array(vertex))
         if line.startswith("vt "):
             uv = [float(val) for val in line.split()[1:3]]
             uvs.append(np.array(uv))
-
     vertex_uvs = [None] * len(vertices)
     for line in lines:
+        if line.startswith("o watermark"):
+            break
         if line.startswith("f "):
             face_vertices = [
                 [int(val) for val in vertex.split("/")] for vertex in line.split()[1:4]
@@ -375,6 +380,10 @@ def save_pcd(pcd, input_dirpath, output_dirpath, name):
     vertex_i = 0
     with open(os.path.join(output_dirpath, name + ".obj"), "w") as f:
         for input_line in input_lines:
+            # There's a weird section after the watermark. process_obj removes it, but best not to rely on that.
+            if input_line.startswith("o watermark"):
+                break
+
             if input_line.startswith("v "):
                 new_vals = [str(val) for val in vertices[vertex_i]]
                 new_line = f"v {' '.join(new_vals)}\n"
@@ -417,5 +426,11 @@ def align_models(
 
 
 if __name__ == "__main__":
-    align_models(PREPARED_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
-    # copy_assets(PROCESSED_BASE, ALIGNED_BASE, NAMES)
+    copy_assets(
+        BLENDER_EXPORT_BASE,
+        ALIGNED_BASE,
+        NAMES,
+        include_obj=True,
+        include_img=True,
+    )
+    align_models(BLENDER_EXPORT_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
