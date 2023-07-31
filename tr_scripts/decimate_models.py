@@ -3,8 +3,6 @@ import os
 
 from constants import ALIGNED_BASE, DECIMATED_BASE, NAMES
 
-# from utils import copy_assets
-
 
 def decimate_obj(
     input_dir: str, output_dir: str, name: str, decimate_ratio: float = None
@@ -43,5 +41,5 @@ def decimate_models(
 
 
 if __name__ == "__main__":
-    decimate_models(ALIGNED_BASE, DECIMATED_BASE, NAMES, 0.5)
-    # copy_assets(ALIGNED_BASE, DECIMATED_BASE, NAMES)
+    decimate_models(ALIGNED_BASE, DECIMATED_BASE, NAMES[:-1], 0.4)
+    decimate_models(ALIGNED_BASE, DECIMATED_BASE, NAMES[-1:], 0.5)
