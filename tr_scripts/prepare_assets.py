@@ -1,33 +1,7 @@
 import os
-from PIL import Image
 
-from constants import NAMES, BLENDER_EXPORT_BASE, PROCESSED_BASE
+from constants import NAMES, BLENDER_EXPORT_BASE, PREPARED_BASE
 from utils import copy_assets
-
-
-def process_image(dirpath: str, name: str, new_size: int = None, to_jpg=True):
-    img = Image.open(os.path.join(dirpath, "texgen_2.png"))
-    if new_size:
-        img = img.resize((new_size, new_size))
-    if to_jpg:
-        img = img.convert("RGB")
-        img.save(os.path.join(dirpath, "texgen_2.jpg"), "JPEG")
-    else:
-        img.save(os.path.join(dirpath, "texgen_2.png"), "PNG")
-
-    mtl_filepath = os.path.join(dirpath, f"{name}.mtl")
-    with open(mtl_filepath, "r") as f:
-        lines = f.readlines()
-
-    with open(mtl_filepath, "w") as f:
-        for line in lines:
-            if to_jpg and line.startswith("map_"):
-                line = line.replace(".png", ".jpg")
-            if "/" in line:
-                # Replace absolute path with relative
-                parts = line.split("/")
-                line = parts[0] + parts[-1]
-            f.write(line)
 
 
 def remove_lines_smoothing_normals_watermark(dirpath, name):
@@ -65,22 +39,20 @@ def remove_lines_smoothing_normals_watermark(dirpath, name):
 
 
 # NOTE: Files are processed in place
-def process_assets(base_dir: str, names: list[str]):
-    print("PROCESSING")
+def process_assets(input_base: str, output_base: str, names: list[str]):
+    print("PREPARING ASSETS")
+    copy_assets(
+        input_base,
+        output_base,
+        names,
+        include_obj=True,
+        include_img=True,
+    )
     for name in names:
-        dirpath = os.path.join(base_dir, name)
+        dirpath = os.path.join(output_base, name)
         os.makedirs(dirpath, exist_ok=True)
         remove_lines_smoothing_normals_watermark(dirpath, name)  # Modifies in place
-        process_image(dirpath, name)
 
 
 if __name__ == "__main__":
-    copy_assets(
-        BLENDER_EXPORT_BASE,
-        PROCESSED_BASE,
-        NAMES,
-        include_obj=True,
-        include_img=True,
-        use_jpg=False,
-    )
-    process_assets(PROCESSED_BASE, NAMES)
+    process_assets(BLENDER_EXPORT_BASE, PREPARED_BASE, NAMES)

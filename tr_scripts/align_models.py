@@ -8,16 +8,13 @@ from scipy.optimize import least_squares
 
 from matplotlib import colors as plt_colors
 
-from constants import NAMES, PROCESSED_BASE, ALIGNED_BASE
-
-# from utils import copy_assets
+from constants import NAMES, PREPARED_BASE, ALIGNED_BASE
 
 
 # NOTE: There's a discrepancy bn o3d and raw where o3d has 4 fewer vertices. Also o3d doesn't do uv well. So, raw it is.
 def get_point_cloud(dirpath: str, name: str):
     with open(os.path.join(dirpath, name + ".obj"), "r") as f:
         lines = f.readlines()
-
     # Get vertex and uv info from obj
     vertices = []
     uvs = []
@@ -41,9 +38,13 @@ def get_point_cloud(dirpath: str, name: str):
                 vertex_uvs[vertex_idx] = uvs[uv_idx]
 
     # Get rbg values
-    img = Image.open(os.path.join(dirpath, "texgen_2.jpg"))
+    img = Image.open(os.path.join(dirpath, "texgen_2.png"))
     img_width, img_height = img.size
     img_data = np.array(img)
+    # Drop alpha channel
+    # print("IMG DATA PRE", type(img_data), img_data[0])
+    # img_data = img_data[:, :3]
+    # print("IMG DATA POST", type(img_data), img_data[0])
     colors = []
     black = np.array([0.0, 0.0, 0.0])
     for i, _ in enumerate(vertices):
@@ -155,33 +156,44 @@ def filter_by_hsv(pcd, target, tolerances):
     # Filter the points
     filtered_points = []
     filtered_colors = []
+    remaining_points = []
+    remaining_colors = []
     for i, hsv_color in enumerate(hsv_colors):
-        hue_match = check_hue(hsv_color[0], target[0], tolerances[0])
+        hue_match = target[0] == None or check_hue(
+            hsv_color[0], target[0], tolerances[0]
+        )
         # Saturation is straightforward
-        saturation_match = (
+        saturation_match = target[1] == None or (
             target[1] - tolerances[1] <= hsv_color[1] <= target[1] + tolerances[1]
         )
         # Value is straightforward
-        value_match = (
+        value_match = target[2] == None or (
             target[2] - tolerances[2] <= hsv_color[2] <= target[2] + tolerances[2]
         )
 
         if hue_match and saturation_match and value_match:
             filtered_points.append(pcd.points[i])
             filtered_colors.append(pcd.colors[i])
+        else:
+            remaining_points.append(pcd.points[i])
+            remaining_colors.append(pcd.colors[i])
 
+    # Create a new point cloud with the remaining points
+    remaining_pcd = o3d.geometry.PointCloud()
+    remaining_pcd.points = o3d.utility.Vector3dVector(remaining_points)
+    remaining_pcd.colors = o3d.utility.Vector3dVector(remaining_colors)
     # Create a new point cloud with the filtered points
-    filtered_pc = o3d.geometry.PointCloud()
-    filtered_pc.points = o3d.utility.Vector3dVector(filtered_points)
-    filtered_pc.colors = o3d.utility.Vector3dVector(filtered_colors)
+    filtered_pcd = o3d.geometry.PointCloud()
+    filtered_pcd.points = o3d.utility.Vector3dVector(filtered_points)
+    filtered_pcd.colors = o3d.utility.Vector3dVector(filtered_colors)
 
-    return filtered_pc
+    return remaining_pcd, filtered_pcd
 
 
-def remove_outliers(pcd, neighbors):
+def remove_outliers(pcd, neighbors, radius):
     # Second return value is a point cloud containing removed values
     # cleaned, _ = pcd.remove_statistical_outlier(nb_neighbors=6, std_ratio=2.0)
-    cleaned, _ = pcd.remove_radius_outlier(nb_points=neighbors, radius=0.075)
+    cleaned, _ = pcd.remove_radius_outlier(nb_points=neighbors, radius=radius)
     return cleaned
 
 
@@ -196,7 +208,7 @@ def filter_red(pcd):
     target = [360 / 360.0, 70 / 100.0, 60 / 100.0]
     tolerances = [5 / 360.0, 30 / 100.0, 40 / 100.0]
 
-    red_pcd = filter_by_hsv(pcd, target, tolerances)
+    _, red_pcd = filter_by_hsv(pcd, target, tolerances)
     return red_pcd
 
 
@@ -205,7 +217,8 @@ def filter_blue(pcd):
     target = [210 / 360.0, 70 / 100.0, 60 / 100.0]
     tolerances = [30 / 360.0, 30 / 100.0, 40 / 100.0]
 
-    return filter_by_hsv(pcd, target, tolerances)
+    _, blue_pcd = filter_by_hsv(pcd, target, tolerances)
+    return blue_pcd
 
 
 def filter_yellow(pcd):
@@ -217,15 +230,12 @@ def filter_yellow(pcd):
     target = [45 / 360.0, 60 / 100.0, 70 / 100.0]
     tolerances = [15 / 360.0, 40 / 100.0, 30 / 100.0]
 
-    return filter_by_hsv(pcd, target, tolerances)
+    _, yellow_pcd = filter_by_hsv(pcd, target, tolerances)
+    return yellow_pcd
 
 
 # Color must be one of "red", "blue", "yellow"
 def get_ball_pcd(pcd, color_str):
-    # # Second return value is a point cloud containing removed values
-    # pcd = get_point_cloud(dirpath, name)
-    # print("CLOUD", pcd)
-
     # A narrow range, but in the (few) models I've tested this isolates the balls quite nicely!
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
@@ -240,7 +250,7 @@ def get_ball_pcd(pcd, color_str):
         pcd = filter_yellow(pcd)
     # print(f"{color_str.upper()} FILTERED", pcd)
 
-    pcd = remove_outliers(pcd, 15)
+    pcd = remove_outliers(pcd, 15, 0.075)
     # print(f"{color_str.upper()} CLEANED", pcd)
 
     return pcd
@@ -267,6 +277,7 @@ def get_markers(pcd):
     markers = []
     for color_str in ["red", "blue", "yellow"]:
         ball_pcd = get_ball_pcd(pcd, color_str)
+        # o3d.visualization.draw_geometries([ball_pcd])
         markers.append(get_center(ball_pcd))
     return markers
 
@@ -357,7 +368,7 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
 
 
 # Afaik open3d save to obj involves converting to triangle mesh, which unfortunately musses things up. Hence this approach.
-def save_pcd(pcd, input_dirpath, output_dirpath, name, with_assets=True):
+def save_pcd(pcd, input_dirpath, output_dirpath, name):
     os.makedirs(output_dirpath, exist_ok=True)
 
     with open(os.path.join(input_dirpath, name + ".obj"), "r") as f:
@@ -400,7 +411,6 @@ def align_models(
         os.makedirs(align_output_dirpath, exist_ok=True)
 
         align_pcd = get_point_cloud(align_dirpath, align_name)
-
         align_markers = get_markers(align_pcd)
 
         align_model(align_pcd, align_markers, ref_markers, inplace=True)
@@ -410,5 +420,5 @@ def align_models(
 
 
 if __name__ == "__main__":
-    align_models(PROCESSED_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
+    align_models(PREPARED_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
     # copy_assets(PROCESSED_BASE, ALIGNED_BASE, NAMES)

@@ -5,3 +5,4 @@ open3d
 Pillow
 scipy
 matplotlib
+opencv-python

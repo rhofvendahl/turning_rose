@@ -29,6 +29,7 @@ def decimate_models(
     input_base: str,
     output_base: str,
     names: list[str],
+    decimate_ratio: float,
 ):
     print("DECIMATING")
     for i, name in enumerate(names):
@@ -37,10 +38,10 @@ def decimate_models(
         output_dirpath = os.path.join(output_base, name)
         os.makedirs(output_dirpath, exist_ok=True)
 
-        decimate_obj(input_dirpath, output_dirpath, name)
+        decimate_obj(input_dirpath, output_dirpath, name, decimate_ratio)
     print()
 
 
 if __name__ == "__main__":
-    decimate_models(ALIGNED_BASE, DECIMATED_BASE, NAMES)
+    decimate_models(ALIGNED_BASE, DECIMATED_BASE, NAMES, 0.5)
     # copy_assets(ALIGNED_BASE, DECIMATED_BASE, NAMES)
