@@ -12,11 +12,11 @@ import RealityKit
 import Metal
 
 private let logger = Logger(subsystem: "com.apple.sample.photogrammetry",
-                            category: "HelloPhotogrammetry")
+                            category: "TRPhotogrammetry")
 
 /// Implements the main command structure, defines the command-line arguments,
 /// and specifies the main run loop.
-struct HelloPhotogrammetry: ParsableCommand {
+struct TRPhotogrammetry: ParsableCommand {
     
     private typealias Configuration = PhotogrammetrySession.Configuration
     private typealias Request = PhotogrammetrySession.Request
@@ -84,9 +84,9 @@ struct HelloPhotogrammetry: ParsableCommand {
                         case .requestError(let request, let error):
                             logger.error("Request \(String(describing: request)) had an error: \(String(describing: error))")
                         case .requestComplete(let request, let result):
-                            HelloPhotogrammetry.handleRequestComplete(request: request, result: result)
+                            TRPhotogrammetry.handleRequestComplete(request: request, result: result)
                         case .requestProgress(let request, let fractionComplete):
-                            HelloPhotogrammetry.handleRequestProgress(request: request,
+                            TRPhotogrammetry.handleRequestProgress(request: request,
                                                                       fractionComplete: fractionComplete)
                         case .inputComplete:  // data ingestion only!
                             logger.log("Data ingestion is complete.  Beginning processing...")
@@ -119,7 +119,7 @@ struct HelloPhotogrammetry: ParsableCommand {
                 logger.log("Using request: \(String(describing: request))")
                 try session.process(requests: [ request ])
                 // Enter the infinite loop dispatcher used to process asynchronous
-                // blocks on the main queue. You explicitly exit above to stop the loop.
+                // blocks on the main queue. You explicitly exit above to stop the loop.
                 RunLoop.main.run()
             } catch {
                 logger.critical("Process got error: \(String(describing: error))")
@@ -227,7 +227,7 @@ extension PhotogrammetrySession.Configuration.FeatureSensitivity {
 
 // Run the program until completion.
 if #available(macOS 12.0, *) {
-    HelloPhotogrametry.main()
+    TRPhotogrammetry.main()
 } else {
     fatalError("Requires minimum macOS 12.0!")
 }
