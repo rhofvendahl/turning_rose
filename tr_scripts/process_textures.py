@@ -53,7 +53,7 @@ def process_textures(
     if names == None:
         names = get_names()
 
-    print("CLEANING")
+    print("PROCESSING TEXTURES")
     for i, name in enumerate(names):
         print(i, name)
         source_dirpath = os.path.join(source_base_dir, name)

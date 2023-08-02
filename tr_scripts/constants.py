@@ -22,3 +22,10 @@ NAMES_CAP: int = 10
 OBJ_FILENAME = "baked_mesh.obj"
 MTL_FILENAME = "baked_mesh.mtl"
 TEXTURE_FILENAME = "baked_mesh_tex0.png"
+
+# Recommended order (after get_image_data and compile_from_images):
+# python prepare_assets.py
+# python align_models.py
+# python process_models.py
+# python process_textures.py
+# python export_gltf.py

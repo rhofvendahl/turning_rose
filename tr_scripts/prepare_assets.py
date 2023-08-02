@@ -42,6 +42,7 @@ def prepare_assets(
     if names == None:
         names = get_names()
 
+    print("PREPARING ASSETS")
     for i, name in enumerate(names):
         print(i, name)
         source_dirpath = os.path.join(source_base_dirpath, name)
