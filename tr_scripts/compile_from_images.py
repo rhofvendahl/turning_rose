@@ -5,10 +5,10 @@ from datetime import datetime
 
 import pandas as pd
 
-from constants import RAW_IMAGES_DIRPATH, RAW_OUTPUTS_DIRPATH, TEMP_OUTPUTS_DIRPATH
+from constants import RAW_OUTPUTS_DIRPATH, TEMP_OUTPUTS_DIRPATH
 from utils import (
     get_names,
-    get_capture_names,
+    get_all_names,
     get_images_from_capture,
     copy_to_temp,
     remove_empty_names,
@@ -18,7 +18,7 @@ from utils import (
 def compile_from_images():
     remove_empty_names()
     so_far = get_names()
-    all = get_capture_names()
+    all = get_all_names()
     for capture_name in all:
         if capture_name in so_far:
             print("Skipping", capture_name)

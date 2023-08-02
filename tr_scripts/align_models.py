@@ -7,7 +7,7 @@ from scipy.optimize import least_squares
 from matplotlib import colors as plt_colors
 
 from constants import INTERMEDIATE_OUTPUTS_DIRPATH
-from utils import get_capture_names
+from utils import get_names
 
 
 # o3d.read_triangle_mesh doesn't grab colors
@@ -311,7 +311,7 @@ def align_models(
     dest_base_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
 ):
     if names == None:
-        names = get_capture_names()
+        names = get_names()
 
     ref_name = names[ref_index]
     ref_dirpath = os.path.join(source_base_dirpath, ref_name)

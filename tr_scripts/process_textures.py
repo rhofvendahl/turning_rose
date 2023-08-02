@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 
 from constants import TEXTURE_OUTPUTS_DIRPATH
-from utils import get_capture_names
+from utils import get_names
 
 
 def resize_image(
@@ -51,7 +51,7 @@ def process_textures(
     dest_base_dir: str = TEXTURE_OUTPUTS_DIRPATH,
 ):
     if names == None:
-        names = get_capture_names()
+        names = get_names()
     image_name = "baked_mesh_tex0.png"
 
     print("CLEANING")
@@ -80,6 +80,6 @@ def process_textures(
 
 
 if __name__ == "__main__":
-    names = get_capture_names()
+    names = get_names()
     process_textures(names[:-1], 256)
     process_textures(names[-1:], 1024)

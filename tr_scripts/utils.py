@@ -8,6 +8,7 @@ from constants import (
     IMAGE_DATA_FILEPATH,
     RAW_IMAGES_DIRPATH,
     TEMP_OUTPUTS_DIRPATH,
+    NAMES_CAP,
 )
 
 
@@ -19,10 +20,14 @@ def get_names(dirpath: str = RAW_OUTPUTS_DIRPATH):
             if len(d.split("_")) == 3:
                 names.append(d)
 
+    # Truncate names if NAMES_CAP is set
+    if NAMES_CAP != None and len(NAMES_CAP) < len(names):
+        print(f"NOTE: using the last {NAMES_CAP} captures only")
+        names = names[-NAMES_CAP:]
     return names
 
 
-def get_capture_names():
+def get_all_names():
     images_df = pd.read_csv(IMAGE_DATA_FILEPATH)
     return images_df["capture_name"].unique().tolist()
 

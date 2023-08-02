@@ -7,7 +7,7 @@ from constants import (
     INTERMEDIATE_OUTPUTS_DIRPATH,
     TEXTURE_OUTPUTS_DIRPATH,
 )
-from utils import get_capture_names
+from utils import get_names
 
 
 def process_mtl(mtl_filepath: str, texture_filepath):
@@ -39,7 +39,7 @@ def prepare_assets(
 ):
     # If no specific names are specified use the list of all names
     if names == None:
-        names = get_capture_names()
+        names = get_names()
 
     for i, name in enumerate(names):
         print(i, name)
