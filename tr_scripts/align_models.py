@@ -82,27 +82,21 @@ def print_dimensions(pcd):
     print("Z Range : ", max_z - min_z)
 
 
-def lop(pcd, from_top, from_bottom=0.0):
-    # Convert point cloud to numpy array
+# Previously this was done as relative to model height, but I'd forgotten that early plants were shorter!
+# My only concern I think is cases where the soil might be mysteriously low? which I think there are a few maybe.
+# If need be I guess could do a think where we get blue & work with that as a reference for where the balls are.
+# def lop(pcd, lower_offset=0.115, upper_offset=0.228):
+def lop(pcd, lower_offset=0.11, upper_offset=0.24):
     pcd_np = np.asarray(pcd.points)
 
-    # Calculate the minimum and maximum x values
-    min_y = np.min(pcd_np[:, 1])
-    max_y = np.max(pcd_np[:, 1])
+    floor = np.min(pcd_np[:, 1])
+    lower_bound = floor + lower_offset
+    upper_bound = floor + upper_offset
 
-    # Calculate how much to take
-    y_take_top = (max_y - min_y) * from_top
-    y_take_bottom = (max_y - min_y) * from_bottom
-
-    # Remove the top two thirds of the point cloud
     remaining_indices = np.where(
-        np.logical_and(
-            pcd_np[:, 1] <= (max_y - y_take_top,),
-            pcd_np[:, 1] >= (min_y + y_take_bottom),
-        )
+        np.logical_and(pcd_np[:, 1] <= upper_bound, pcd_np[:, 1] >= lower_bound)
     )
 
-    # Create a new point cloud with the filtered points
     remaining_pcd = o3d.geometry.PointCloud()
     remaining_pcd.points = o3d.utility.Vector3dVector(pcd_np[remaining_indices])
     remaining_pcd.colors = o3d.utility.Vector3dVector(
@@ -200,7 +194,7 @@ def get_ball_pcd(pcd, color_str):
     # A narrow range, but in the (few) models I've tested this isolates the balls quite nicely!
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
-    pcd = lop(pcd, 0.8, 0.1)
+    pcd = lop(pcd)
 
     if color_str == "red":
         pcd = filter_red(pcd)
@@ -235,6 +229,9 @@ def get_markers(pcd):
     for color_str in ["red", "blue", "yellow"]:
         ball_pcd = get_ball_pcd(pcd, color_str)
         # o3d.visualization.draw_geometries([ball_pcd])
+        if len(ball_pcd.points) == 0:
+            print(f"Error: failed to get point cloud for {color_str} ball.")
+            return
         markers.append(get_center(ball_pcd))
     return markers
 
@@ -328,7 +325,9 @@ def align_models(
 
         align_pcd = get_point_cloud(align_source_dirpath)
         align_markers = get_markers(align_pcd)
-
+        if align_markers == None:
+            print(f"Failed to align {align_name}")
+            continue
         align_model(align_pcd, align_markers, ref_markers, inplace=True)
 
         save_pcd(align_pcd, align_source_dirpath, align_dest_dirpath, align_name)
