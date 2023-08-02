@@ -80,5 +80,5 @@ def process_textures(
 
 if __name__ == "__main__":
     names = get_names()
-    process_textures(names[:-1], 256)
+    process_textures(names[:-1], 512)
     process_textures(names[-1:], 1024)

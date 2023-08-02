@@ -17,7 +17,7 @@ WEBAPP_INDEX_FILEPATH = "../tr-web/public/db/json/modelNames.json"
 
 # The number of captures to work with. Useful for dev purposes, set to None to use all names
 # NOTE: util.get_capture_names() selects the n latest.
-NAMES_CAP: int = 10
+NAMES_CAP: int = 100
 
 OBJ_FILENAME = "baked_mesh.obj"
 MTL_FILENAME = "baked_mesh.mtl"
@@ -29,3 +29,5 @@ TEXTURE_FILENAME = "baked_mesh_tex0.png"
 # python process_models.py
 # python process_textures.py
 # python export_gltf.py
+
+# All together: python prepare_assets.py && python align_models.py && python process_models.py && python process_textures.py && python export_gltf.py

@@ -50,7 +50,7 @@ def export_gltf(
             webapp_dest_filepath = os.path.join(WEBAPP_GLTF_DIRPATH, f"{name}.gltf")
             shutil.copy2(webapp_source_filepath, webapp_dest_filepath)
 
-    if index_filepath:
+    if copy_to_webapp and index_filepath:
         os.makedirs(os.path.dirname(index_filepath), exist_ok=True)
         index = [f"{name}.gltf" for name in names]
         with open(index_filepath, "w") as file:
@@ -58,4 +58,4 @@ def export_gltf(
 
 
 if __name__ == "__main__":
-    export_gltf()
+    export_gltf(copy_to_webapp=True)
