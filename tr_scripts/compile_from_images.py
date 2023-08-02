@@ -16,7 +16,7 @@ from utils import (
 
 def compile_from_images():
     remove_empty_names()
-    so_far = get_names(cap=False)
+    so_far = get_names(cap=False, include_blacklist=True)
     all = get_all_names()
     for capture_name in all:
         if capture_name in so_far:

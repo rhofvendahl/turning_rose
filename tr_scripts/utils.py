@@ -7,12 +7,18 @@ from constants import (
     RAW_OUTPUTS_DIRPATH,
     IMAGE_DATA_FILEPATH,
     TEMP_OUTPUTS_DIRPATH,
-    NAMES_CAP,
+    START_AT,
+    BLACKLIST,
 )
 
 
-def get_names(dirpath: str = RAW_OUTPUTS_DIRPATH, cap=True, include_darker=True):
-    names = []
+def get_names(
+    dirpath: str = RAW_OUTPUTS_DIRPATH,
+    include_darker=True,
+    include_blacklist=False,
+    ignore_start_at=False,
+):
+    names: list[str] = []
     for _, dirs, _ in os.walk(dirpath):
         for d in dirs:
             # Model names should be along the lines of '0_2023-07-31_19'
@@ -20,15 +26,16 @@ def get_names(dirpath: str = RAW_OUTPUTS_DIRPATH, cap=True, include_darker=True)
             if len(d.split("_")) >= 3:
                 names.append(d)
 
-    if cap:
-        # Truncate names if NAMES_CAP is set
-        if NAMES_CAP != None and NAMES_CAP < len(names):
-            print(f"NOTE: using the last {NAMES_CAP} captures only")
-            names = names[-NAMES_CAP:]
+    if not ignore_start_at and START_AT is not None:
+        start_index = names.index(START_AT)
+        names = names[start_index:]
 
     if not include_darker:
         print("Excluding darker capture")
         names = [name for name in names if "darker" not in name]
+
+    if not include_blacklist and BLACKLIST is not None:
+        names = [name for name in names if name not in BLACKLIST]
 
     return names
 

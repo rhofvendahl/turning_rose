@@ -15,9 +15,14 @@ WEBAPP_GLTF_DIRPATH = "../tr-web/public/db/gltf"
 WEBAPP_INDEX_FILEPATH = "../tr-web/public/db/json/modelNames.json"
 
 
-# The number of captures to work with. Useful for dev purposes, set to None to use all names
-# NOTE: util.get_capture_names() selects the n latest.
-NAMES_CAP: int = 100
+# NOTE: Capture indices start at 0 and go to 132 (including final darker), for a total of 133 frames
+# So, starting at capture 57 (with no subsequent blacklisted) makes for 76 frames
+# (there's a big jump between 56/57 where the rose was damaged and trimmed, and 56 was a bad capture anyway)
+START_AT: str = "57_2023-07-01_13"
+BLACKLIST = [
+    # This capture only included 80 frames and is pretty messed up
+    "56_2023-07-01_13",
+]
 
 OBJ_FILENAME = "baked_mesh.obj"
 MTL_FILENAME = "baked_mesh.mtl"
