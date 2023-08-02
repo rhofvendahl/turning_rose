@@ -33,9 +33,9 @@ def prepare_assets(
     names: list[str] = None,
     include_obj: bool = True,
     include_texture: bool = True,
-    source_dirpath: str = RAW_OUTPUTS_DIRPATH,
-    obj_dest_dirpath: str = INTERMEDIATE_OUTPUTS_DIRPATH,
-    texture_dest_dirpath: str = TEXTURE_OUTPUTS_DIRPATH,
+    source_base_dirpath: str = RAW_OUTPUTS_DIRPATH,
+    obj_dest_base_dirpath: str = INTERMEDIATE_OUTPUTS_DIRPATH,
+    texture_dest_base_dirpath: str = TEXTURE_OUTPUTS_DIRPATH,
 ):
     # If no specific names are specified use the list of all names
     if names == None:
@@ -43,10 +43,10 @@ def prepare_assets(
 
     for i, name in enumerate(names):
         print(i, name)
-        source_dirpath = os.path.join(source_dirpath, name)
+        source_dirpath = os.path.join(source_base_dirpath, name)
 
         if include_obj:
-            dest_dirpath = os.path.join(obj_dest_dirpath, name)
+            dest_dirpath = os.path.join(obj_dest_base_dirpath, name)
             os.makedirs(dest_dirpath, exist_ok=True)
 
             filename = "baked_mesh.obj"
@@ -61,7 +61,7 @@ def prepare_assets(
             process_mtl(dest_filepath)
 
         if include_texture:
-            dest_dirpath = os.path.join(texture_dest_dirpath, name)
+            dest_dirpath = os.path.join(texture_dest_base_dirpath, name)
             os.makedirs(dest_dirpath, exist_ok=True)
 
             filename = "baked_mesh_tex0.png"

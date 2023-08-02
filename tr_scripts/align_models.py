@@ -3,9 +3,7 @@ import os
 import numpy as np
 import open3d as o3d
 from PIL import Image
-from scipy.spatial.transform import Rotation
 from scipy.optimize import least_squares
-
 from matplotlib import colors as plt_colors
 
 from constants import INTERMEDIATE_OUTPUTS_DIRPATH
@@ -309,14 +307,14 @@ def save_pcd(pcd, source_dirpath, dest_dirpath, name):
 def align_models(
     ref_index: int = 0,
     names: list[str] = None,
-    source_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
-    dest_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
+    source_base_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
+    dest_base_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
 ):
     if names == None:
         names = get_capture_names()
 
     ref_name = names[ref_index]
-    ref_dirpath = os.path.join(source_dirpath, ref_name)
+    ref_dirpath = os.path.join(source_base_dirpath, ref_name)
 
     ref_pcd = get_point_cloud(ref_dirpath, ref_name)
     ref_markers = get_markers(ref_pcd)
@@ -324,8 +322,8 @@ def align_models(
     print(f"ALIGNING (with {ref_name})")
     for i, align_name in enumerate(names):
         print(i, align_name)
-        align_source_dirpath = os.path.join(source_dirpath, align_name)
-        align_dest_dirpath = os.path.join(dest_dirpath, align_name)
+        align_source_dirpath = os.path.join(source_base_dirpath, align_name)
+        align_dest_dirpath = os.path.join(dest_base_dirpath, align_name)
         os.makedirs(align_dest_dirpath, exist_ok=True)
 
         align_pcd = get_point_cloud(align_source_dirpath, align_name)
