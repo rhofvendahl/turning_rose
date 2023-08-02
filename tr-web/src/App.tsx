@@ -40,6 +40,6 @@ const App = () => {
       </Canvas>
     </div>
   );
-}
+};
 
 export default App;

@@ -97,7 +97,7 @@ const getFrames = async (): Promise<Frame[]> => {
       return frame;
     });
     return frames;
-}
+};
 
 export const useFrame = ({ frames, setFrames, currentFrameRef, setCurrentFrame }: {
   frames: Frame[],
