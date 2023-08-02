@@ -8,8 +8,8 @@ from scipy.optimize import least_squares
 
 from matplotlib import colors as plt_colors
 
-from constants import NAMES, BLENDER_EXPORT_BASE, ALIGNED_BASE
-from utils import copy_assets
+from constants import INTERMEDIATE_OUTPUTS_DIRPATH
+from utils import get_capture_names
 
 
 # o3d.read_triangle_mesh doesn't grab colors
@@ -84,29 +84,6 @@ def print_dimensions(pcd):
     print("Z Range : ", max_z - min_z)
 
 
-def lop_top(pcd, take_ratio):
-    # Convert point cloud to numpy array
-    pcd_np = np.asarray(pcd.points)
-
-    # Calculate the minimum and maximum x values
-    min_y = np.min(pcd_np[:, 1])
-    max_y = np.max(pcd_np[:, 1])
-
-    # Calculate one third of the x range
-    y_take = (max_y - min_y) * take_ratio
-
-    # Remove the top two thirds of the point cloud
-    lopped_indices = np.where(pcd_np[:, 1] <= (max_y - y_take))
-
-    # Create a new point cloud with the filtered points
-    lopped_pcd = o3d.geometry.PointCloud()
-    lopped_pcd.points = o3d.utility.Vector3dVector(pcd_np[lopped_indices])
-    lopped_pcd.colors = o3d.utility.Vector3dVector(
-        np.asarray(pcd.colors)[lopped_indices]
-    )
-    return lopped_pcd
-
-
 def lop(pcd, from_top, from_bottom=0.0):
     # Convert point cloud to numpy array
     pcd_np = np.asarray(pcd.points)
@@ -120,7 +97,7 @@ def lop(pcd, from_top, from_bottom=0.0):
     y_take_bottom = (max_y - min_y) * from_bottom
 
     # Remove the top two thirds of the point cloud
-    lopped_indices = np.where(
+    remaining_indices = np.where(
         np.logical_and(
             pcd_np[:, 1] <= (max_y - y_take_top,),
             pcd_np[:, 1] >= (min_y + y_take_bottom),
@@ -128,12 +105,12 @@ def lop(pcd, from_top, from_bottom=0.0):
     )
 
     # Create a new point cloud with the filtered points
-    lopped_pcd = o3d.geometry.PointCloud()
-    lopped_pcd.points = o3d.utility.Vector3dVector(pcd_np[lopped_indices])
-    lopped_pcd.colors = o3d.utility.Vector3dVector(
-        np.asarray(pcd.colors)[lopped_indices]
+    remaining_pcd = o3d.geometry.PointCloud()
+    remaining_pcd.points = o3d.utility.Vector3dVector(pcd_np[remaining_indices])
+    remaining_pcd.colors = o3d.utility.Vector3dVector(
+        np.asarray(pcd.colors)[remaining_indices]
     )
-    return lopped_pcd
+    return remaining_pcd
 
 
 def check_hue(hue, target, tolerance):
@@ -156,8 +133,6 @@ def filter_by_hsv(pcd, target, tolerances):
     hsv_colors = plt_colors.rgb_to_hsv(rgb_colors)
 
     # Filter the points
-    filtered_points = []
-    filtered_colors = []
     remaining_points = []
     remaining_colors = []
     for i, hsv_color in enumerate(hsv_colors):
@@ -174,43 +149,32 @@ def filter_by_hsv(pcd, target, tolerances):
         )
 
         if hue_match and saturation_match and value_match:
-            filtered_points.append(pcd.points[i])
-            filtered_colors.append(pcd.colors[i])
-        else:
             remaining_points.append(pcd.points[i])
             remaining_colors.append(pcd.colors[i])
 
-    # Create a new point cloud with the remaining points
+    # Create a new point cloud with the remaining points (i.e. near target)
     remaining_pcd = o3d.geometry.PointCloud()
     remaining_pcd.points = o3d.utility.Vector3dVector(remaining_points)
     remaining_pcd.colors = o3d.utility.Vector3dVector(remaining_colors)
-    # Create a new point cloud with the filtered points
-    filtered_pcd = o3d.geometry.PointCloud()
-    filtered_pcd.points = o3d.utility.Vector3dVector(filtered_points)
-    filtered_pcd.colors = o3d.utility.Vector3dVector(filtered_colors)
 
-    return remaining_pcd, filtered_pcd
+    return remaining_pcd
 
 
 def remove_outliers(pcd, neighbors, radius):
-    # Second return value is a point cloud containing removed values
+    # Tempting alternative:
     # cleaned, _ = pcd.remove_statistical_outlier(nb_neighbors=6, std_ratio=2.0)
+
+    # Second return value is a point cloud containing removed values
     cleaned, _ = pcd.remove_radius_outlier(nb_points=neighbors, radius=radius)
     return cleaned
 
 
 def filter_red(pcd):
     # Red is do-able without lop, but lop allows safe inclusion of more points.
-
-    # Good without lop:
-    # target = [359 / 360.0, 70 / 100.0, 60 / 100.0]
-    # tolerances = [4 / 360.0, 30 / 100.0, 40 / 100.0]
-
-    # Better with lop:
     target = [360 / 360.0, 70 / 100.0, 60 / 100.0]
     tolerances = [5 / 360.0, 30 / 100.0, 40 / 100.0]
 
-    _, red_pcd = filter_by_hsv(pcd, target, tolerances)
+    red_pcd = filter_by_hsv(pcd, target, tolerances)
     return red_pcd
 
 
@@ -219,20 +183,17 @@ def filter_blue(pcd):
     target = [210 / 360.0, 70 / 100.0, 60 / 100.0]
     tolerances = [30 / 360.0, 30 / 100.0, 40 / 100.0]
 
-    _, blue_pcd = filter_by_hsv(pcd, target, tolerances)
+    blue_pcd = filter_by_hsv(pcd, target, tolerances)
     return blue_pcd
 
 
 def filter_yellow(pcd):
     # Yellow pretty finicky, the color of the ball is shared by a lot of ground and leaf points.
     # Isolating the ball at all relies heavily on lop to remove ground and plant
-    # target = [45 / 360.0, 55 / 100.0, 65 / 100.0]
-    # tolerances = [15 / 360.0, 45 / 100.0, 35 / 100.0]
-
     target = [45 / 360.0, 60 / 100.0, 70 / 100.0]
     tolerances = [15 / 360.0, 40 / 100.0, 30 / 100.0]
 
-    _, yellow_pcd = filter_by_hsv(pcd, target, tolerances)
+    yellow_pcd = filter_by_hsv(pcd, target, tolerances)
     return yellow_pcd
 
 
@@ -242,7 +203,6 @@ def get_ball_pcd(pcd, color_str):
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
     pcd = lop(pcd, 0.8, 0.1)
-    # print(f"{color_str.upper()} LOPPED", pcd)
 
     if color_str == "red":
         pcd = filter_red(pcd)
@@ -250,11 +210,8 @@ def get_ball_pcd(pcd, color_str):
         pcd = filter_blue(pcd)
     elif color_str == "yellow":
         pcd = filter_yellow(pcd)
-    # print(f"{color_str.upper()} FILTERED", pcd)
 
     pcd = remove_outliers(pcd, 15, 0.075)
-    # print(f"{color_str.upper()} CLEANED", pcd)
-
     return pcd
 
 
@@ -284,50 +241,6 @@ def get_markers(pcd):
     return markers
 
 
-# Translate model so that markers center is at origin, and rotate it so that they're flat against the xz plane; return new pcd and markers
-def center_model(pcd, markers, inplace=False):
-    if not inplace:
-        new_pcd = o3d.geometry.PointCloud()
-        new_pcd.points = pcd.points
-        new_pcd.colors = pcd.colors
-        pcd = new_pcd
-
-    p1 = markers[0]
-    p2 = markers[1]
-    p3 = markers[2]
-    triangle_centroid = (p1 + p2 + p3) / 3.0
-
-    v1 = p2 - p1
-    v2 = p3 - p1
-    triangle_normal = np.cross(v1, v2)
-
-    # Normalize vector (thx chatgpt)
-    norm = np.linalg.norm(triangle_normal)
-    if norm != 0:
-        triangle_normal /= norm
-
-    # Model is upside down otherwise. I'm reasonably sure that's bc triangle normal has y of -1ish
-    y_axis = np.array([0, -1, 0])
-
-    # Calculate rotation matrix
-    # rotation_matrix = o3d.geometry.get_rotation_matrix_from_to(triangle_normal, y_axis)
-    r = Rotation.align_vectors([y_axis], [triangle_normal])
-    rotation_matrix = r[0].as_matrix()
-
-    translation_vector = -triangle_centroid
-
-    # Rotate and transform ref model
-    pcd.rotate(rotation_matrix, center=(0, 0, 0))
-    pcd.translate(translation_vector)
-
-    # Rotate and translate markers
-    new_p1 = np.dot(rotation_matrix, p1 - triangle_centroid)
-    new_p2 = np.dot(rotation_matrix, p2 - triangle_centroid)
-    new_p3 = np.dot(rotation_matrix, p3 - triangle_centroid)
-
-    return pcd, np.array([new_p1, new_p2, new_p3])
-
-
 def align_model(pcd, align_markers, ref_markers, inplace=False):
     if not inplace:
         new_pcd = o3d.geometry.PointCloud()
@@ -341,7 +254,7 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
     align_markers_centered = align_markers - align_centroid
     ref_markers_centered = ref_markers - ref_centroid
 
-    # [Onward I don't really get]
+    # [Onward I don't understand but seems to work - thx chatgpt]
 
     # Compute H, cross-covariance matrix
     H = np.dot(align_markers_centered.T, ref_markers_centered)
@@ -370,67 +283,59 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
 
 
 # Afaik open3d save to obj involves converting to triangle mesh, which unfortunately musses things up. Hence this approach.
-def save_pcd(pcd, input_dirpath, output_dirpath, name):
-    os.makedirs(output_dirpath, exist_ok=True)
+def save_pcd(pcd, source_dirpath, dest_dirpath, name):
+    os.makedirs(dest_dirpath, exist_ok=True)
 
-    with open(os.path.join(input_dirpath, name + ".obj"), "r") as f:
-        input_lines = f.readlines()
+    with open(os.path.join(source_dirpath, name + ".obj"), "r") as f:
+        lines = f.readlines()
     vertices = np.asarray(pcd.points)
 
     vertex_i = 0
-    with open(os.path.join(output_dirpath, name + ".obj"), "w") as f:
-        for input_line in input_lines:
-            # There's a weird section after the watermark. process_obj removes it, but best not to rely on that.
-            if input_line.startswith("o watermark"):
+    with open(os.path.join(dest_dirpath, name + ".obj"), "w") as f:
+        for lines in lines:
+            # NOTE: Only needed with photocatch output
+            if lines.startswith("o watermark"):
                 break
 
-            if input_line.startswith("v "):
+            if lines.startswith("v "):
                 new_vals = [str(val) for val in vertices[vertex_i]]
                 new_line = f"v {' '.join(new_vals)}\n"
                 f.write(new_line)
                 vertex_i += 1
             else:
-                f.write(input_line)
+                f.write(lines)
 
 
 def align_models(
-    input_base: str,
-    output_base: str,
-    ref_name: str,
-    names: list[str],
+    ref_index: int = 0,
+    names: list[str] = None,
+    source_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
+    dest_dirpath=INTERMEDIATE_OUTPUTS_DIRPATH,
 ):
-    ref_dirpath = os.path.join(input_base, ref_name)
+    if names == None:
+        names = get_capture_names()
+
+    ref_name = names[ref_index]
+    ref_dirpath = os.path.join(source_dirpath, ref_name)
 
     ref_pcd = get_point_cloud(ref_dirpath, ref_name)
     ref_markers = get_markers(ref_pcd)
 
-    # NOTE: Centering needs some debugging to work with align, and I'm honestly not even sure I want it so just gonna leave it here
-    # ref_pcd_centered, ref_markers_centered = center_model(ref_pcd, ref_markers)
-    # ref_pcd = ref_pcd_centered
-    # ref_markers = ref_markers_centered
-
     print(f"ALIGNING (with {ref_name})")
     for i, align_name in enumerate(names):
         print(i, align_name)
-        align_dirpath = os.path.join(input_base, align_name)
-        align_output_dirpath = os.path.join(output_base, align_name)
-        os.makedirs(align_output_dirpath, exist_ok=True)
+        align_source_dirpath = os.path.join(source_dirpath, align_name)
+        align_dest_dirpath = os.path.join(dest_dirpath, align_name)
+        os.makedirs(align_dest_dirpath, exist_ok=True)
 
-        align_pcd = get_point_cloud(align_dirpath, align_name)
+        align_pcd = get_point_cloud(align_source_dirpath, align_name)
         align_markers = get_markers(align_pcd)
 
         align_model(align_pcd, align_markers, ref_markers, inplace=True)
 
-        save_pcd(align_pcd, align_dirpath, align_output_dirpath, align_name)
+        save_pcd(align_pcd, align_source_dirpath, align_dest_dirpath, align_name)
     print()
 
 
 if __name__ == "__main__":
-    copy_assets(
-        BLENDER_EXPORT_BASE,
-        ALIGNED_BASE,
-        NAMES,
-        include_obj=True,
-        include_img=True,
-    )
-    align_models(BLENDER_EXPORT_BASE, ALIGNED_BASE, NAMES[-1], NAMES[:-1])
+    align_models(-1)
