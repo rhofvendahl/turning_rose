@@ -3,7 +3,7 @@ import os
 from PIL import Image
 import numpy as np
 
-from constants import TEXTURE_OUTPUTS_DIRPATH
+from constants import INTERMEDIATE_OUTPUTS_DIRPATH
 from utils import get_names
 
 
@@ -47,8 +47,8 @@ def filter_texture(input_dirpath, output_dirpath, lower_bound, upper_bound):
 def process_textures(
     names: list[str] = None,
     new_size: int = None,
-    source_base_dir: str = TEXTURE_OUTPUTS_DIRPATH,
-    dest_base_dir: str = TEXTURE_OUTPUTS_DIRPATH,
+    source_base_dir: str = INTERMEDIATE_OUTPUTS_DIRPATH,
+    dest_base_dir: str = INTERMEDIATE_OUTPUTS_DIRPATH,
 ):
     if names == None:
         names = get_names()
