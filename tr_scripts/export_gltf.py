@@ -52,7 +52,7 @@ def export_gltf(
 
     if index_filepath:
         os.makedirs(os.path.dirname(index_filepath), exist_ok=True)
-        index = [os.path.join(WEBAPP_INDEX_PREFIX, f"{name}.gltf") for name in names]
+        index = [f"{name}.gltf" for name in names]
         with open(index_filepath, "w") as file:
             json.dump(index, file, indent=2)
 

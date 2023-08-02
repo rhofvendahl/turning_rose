@@ -11,8 +11,7 @@ IMAGE_DATA_FILEPATH = "/Volumes/T7/turning_rose/outputs/metadata/image_data.csv"
 
 # Useful for webapp
 WEBAPP_GLTF_DIRPATH = "../tr-web/public/db/gltf"
-WEBAPP_INDEX_FILEPATH = "../tr-web/public/json/modelPaths.json"
-WEBAPP_INDEX_PREFIX = "/db/gltf/"
+WEBAPP_INDEX_FILEPATH = "../tr-web/public/db/json/modelNames.json"
 
 
 # The number of captures to work with. Useful for dev purposes, set to None to use all names
