@@ -1,4 +1,5 @@
 import os
+import math
 
 import numpy as np
 import open3d as o3d
@@ -86,12 +87,17 @@ def print_dimensions(pcd):
 # My only concern I think is cases where the soil might be mysteriously low? which I think there are a few maybe.
 # If need be I guess could do a think where we get blue & work with that as a reference for where the balls are.
 # def lop(pcd, lower_offset=0.115, upper_offset=0.228):
-def lop(pcd, lower_offset=0.11, upper_offset=0.24):
+def lop(pcd, lower_offset=0.11, upper_offset=0.24, ref_center=None):
     pcd_np = np.asarray(pcd.points)
 
-    floor = np.min(pcd_np[:, 1])
-    lower_bound = floor + lower_offset
-    upper_bound = floor + upper_offset
+    if ref_center is not None:
+        # Ball diameter is roughly .075
+        lower_bound = ref_center[1] - 0.05
+        upper_bound = ref_center[1] + 0.05
+    else:
+        floor = np.min(pcd_np[:, 1])
+        lower_bound = floor + lower_offset
+        upper_bound = floor + upper_offset
 
     remaining_indices = np.where(
         np.logical_and(pcd_np[:, 1] <= upper_bound, pcd_np[:, 1] >= lower_bound)
@@ -102,6 +108,23 @@ def lop(pcd, lower_offset=0.11, upper_offset=0.24):
     remaining_pcd.colors = o3d.utility.Vector3dVector(
         np.asarray(pcd.colors)[remaining_indices]
     )
+    return remaining_pcd
+
+
+def core(pcd, radius=0.28, ref_center=None):
+    pcd_np = np.asarray(pcd.points)
+
+    # Ref center is basically the location of the blue ball, and can be used to find a reasonable radius
+    if ref_center is not None:
+        # Ball diameter is roughly .075, but some are a bit offcenter so giving it some slack
+        radius = math.sqrt(ref_center[0] ** 2 + ref_center[2] ** 2) - 0.1
+
+    distance_squared = pcd_np[:, 0] ** 2 + pcd_np[:, 2] ** 2
+    mask = distance_squared >= radius**2
+
+    remaining_pcd = o3d.geometry.PointCloud()
+    remaining_pcd.points = o3d.utility.Vector3dVector(pcd_np[mask])
+    remaining_pcd.colors = o3d.utility.Vector3dVector(np.asarray(pcd.colors)[mask])
     return remaining_pcd
 
 
@@ -190,11 +213,14 @@ def filter_yellow(pcd):
 
 
 # Color must be one of "red", "blue", "yellow"
-def get_ball_pcd(pcd, color_str):
+def get_ball_pcd(pcd, color_str, ref_center=None):
     # A narrow range, but in the (few) models I've tested this isolates the balls quite nicely!
     # Kinda important cause soil color blends in with darker points of yellow ball otherwise
     # Only caveat being that I suspect some models will have depressions in soil throwing things off - ah well
-    pcd = lop(pcd)
+    pcd = lop(pcd, ref_center=ref_center)
+
+    # Removes most of the plant and soil as well
+    pcd = core(pcd, ref_center=ref_center)
 
     if color_str == "red":
         pcd = filter_red(pcd)
@@ -226,11 +252,21 @@ def get_center(pcd):
 
 def get_markers(pcd):
     markers = []
-    for color_str in ["red", "blue", "yellow"]:
-        ball_pcd = get_ball_pcd(pcd, color_str)
+    # Blue is an easy one so is used as a reference by lop()
+    blue_pcd = get_ball_pcd(pcd, "blue")
+    blue_center = get_center(blue_pcd)
+    markers.append(blue_center)
+    for color_str in ["red", "yellow"]:
+        ball_pcd = get_ball_pcd(pcd, color_str, ref_center=blue_center)
         # o3d.visualization.draw_geometries([ball_pcd])
         if len(ball_pcd.points) == 0:
             print(f"Error: failed to get point cloud for {color_str} ball.")
+            o3d.visualization.draw_geometries([pcd])
+            o3d.visualization.draw_geometries([lop(pcd, ref_center=blue_center)])
+            o3d.visualization.draw_geometries([core(pcd, ref_center=blue_center)])
+            o3d.visualization.draw_geometries(
+                [lop(core(pcd, ref_center=blue_center), ref_center=blue_center)]
+            )
             return
         markers.append(get_center(ball_pcd))
     return markers
