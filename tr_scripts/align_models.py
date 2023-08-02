@@ -293,6 +293,11 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
     # Compute the Singular Value Decompositin to get U ()
     U, S, Vt = np.linalg.svd(H)
 
+    # Compute the scaling factor
+    scaling_factor = np.sum(S) / np.sum(
+        np.linalg.svd(np.dot(align_markers_centered.T, align_markers_centered))[1]
+    )
+
     # Compute the rotation matrix R
     R = np.dot(Vt.T, U.T)
 
@@ -306,7 +311,7 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
 
     # Apply the transformation to the point cloud
     transformation = np.eye(4)
-    transformation[:3, :3] = R
+    transformation[:3, :3] = scaling_factor * R
     transformation[:3, 3] = t
 
     pcd.transform(transformation)
