@@ -57,20 +57,21 @@ const loadModels = async ({ frames, currentFrameRef, setCurrentFrame }: {
   while (nextIndex !== null) {
     const loadingFrame = frames[nextIndex];
     const model = await loader.loadAsync(MODEL_PATH_BASE + loadingFrame.name);
-
+    console.log(`Loaded: ${loadingFrame.index} ${loadingFrame.name}`)
     configureModel(model);
     loadingFrame.model = model;
     if (currentFrameRef.current === null) {
       setCurrentFrame(loadingFrame);
-      prevCurrentFrameRefValue = loadingFrame
+      currentFrameRef.current = loadingFrame;
     }
     // In theory setCurrentFrame should result in the recalculation of currentFrameRef, but timing may be unreliable.
     // So, currentFrameRef.current should have either the previous currentFrameValue, or the one that's just been set.
     // If it's something else, however, that means somewhere external has changed it, in which case that new value
     // should be respected as the new place to load forward from.
     const latestCurrentFrameRefValue = currentFrameRef.current;
-    const currentFrameJump = latestCurrentFrameRefValue?.name !== prevCurrentFrameRefValue?.name && latestCurrentFrameRefValue?.name !== loadingFrame.name;
-
+    const notPrevValue = latestCurrentFrameRefValue?.name !== prevCurrentFrameRefValue?.name;
+    const notNewValue = latestCurrentFrameRefValue?.name !== loadingFrame.name;
+    const currentFrameJump = notPrevValue && notNewValue
     // The usual case, in which loading continues from the latest loaded frame
     let loadForwardFrom = loadingFrame;
     // The case where something like the user skipping forward has happened, causing currentFrame to change unexpectedly
