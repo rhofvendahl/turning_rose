@@ -1,14 +1,23 @@
-import bpy
 import os
 import json
+import shutil
 
-from constants import NAMES, DECIMATED_BASE, GLTF_DIR, INDEX_FILEPATH
+import bpy
+
+from constants import (
+    INTERMEDIATE_OUTPUTS_DIRPATH,
+    COMPLETE_OUTPUTS_DIRPATH,
+    WEBAPP_GLTF_DIRPATH,
+    WEBAPP_INDEX_FILEPATH,
+    WEBAPP_INDEX_PREFIX,
+)
+from utils import get_names
 
 
-def convert(input_dir: str, output_dir: str, name: str):
-    bpy.ops.import_scene.obj(filepath=os.path.join(input_dir, f"{name}.obj"))
+def convert_to_gltf(source_filepath: str, dest_filepath: str):
+    bpy.ops.import_scene.obj(filepath=source_filepath)
     bpy.ops.export_scene.gltf(
-        filepath=os.path.join(output_dir, f"{name}.gltf"),
+        filepath=dest_filepath,
         use_selection=True,
         export_format="GLTF_EMBEDDED",
         export_normals=False,
@@ -16,27 +25,37 @@ def convert(input_dir: str, output_dir: str, name: str):
 
 
 def export_gltf(
-    input_base: str, output_dir: str, names: list[str], index_filepath: str = None
+    names: list[str] = None,
+    source_base_dirpath: str = INTERMEDIATE_OUTPUTS_DIRPATH,
+    dest_dirpath: str = COMPLETE_OUTPUTS_DIRPATH,
+    index_filepath: str = WEBAPP_INDEX_FILEPATH,
+    copy_to_webapp: bool = False,
 ):
+    os.makedirs(dest_dirpath, exist_ok=True)
+    if copy_to_webapp:
+        os.makedirs(WEBAPP_GLTF_DIRPATH, exist_ok=True)
+    if names == None:
+        names = get_names()
+
     print("EXPORTING")
     for i, name in enumerate(names):
         print(i, name)
-        input_dirpath = os.path.join(input_base, name)
-        os.makedirs(output_dir, exist_ok=True)
+        source_dirpath = os.path.join(source_base_dirpath, name)
+        source_filepath = os.path.join(source_dirpath, "baked_mesh.obj")
+        dest_filepath = os.path.join(dest_dirpath, f"{name}.gltf")
+        convert_to_gltf(source_filepath, dest_filepath)
 
-        convert(input_dirpath, output_dir, name)
+        if copy_to_webapp:
+            webapp_source_filepath = os.path.join(dest_dirpath, f"{name}.gltf")
+            webapp_dest_filepath = os.path.join(WEBAPP_GLTF_DIRPATH, f"{name}.gltf")
+            shutil.copy2(webapp_source_filepath, webapp_dest_filepath)
 
-        if index_filepath:
-            os.makedirs
     if index_filepath:
         os.makedirs(os.path.dirname(index_filepath), exist_ok=True)
-        index = [
-            os.path.join(output_dir.split("public")[-1], name + ".gltf")
-            for name in names
-        ]
+        index = [os.path.join(WEBAPP_INDEX_PREFIX, f"{name}.gltf") for name in names]
         with open(index_filepath, "w") as file:
             json.dump(index, file, indent=2)
 
 
 if __name__ == "__main__":
-    export_gltf(DECIMATED_BASE, GLTF_DIR, NAMES, index_filepath=INDEX_FILEPATH)
+    export_gltf()
