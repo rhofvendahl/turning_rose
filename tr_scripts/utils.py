@@ -21,7 +21,7 @@ def get_names(dirpath: str = RAW_OUTPUTS_DIRPATH):
                 names.append(d)
 
     # Truncate names if NAMES_CAP is set
-    if NAMES_CAP != None and len(NAMES_CAP) < len(names):
+    if NAMES_CAP != None and NAMES_CAP < len(names):
         print(f"NOTE: using the last {NAMES_CAP} captures only")
         names = names[-NAMES_CAP:]
     return names
