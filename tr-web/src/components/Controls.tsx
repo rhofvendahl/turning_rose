@@ -32,7 +32,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
             setPlay(false);
           }
           playIndex.current += 1;
-        }, 333);
+        }, 50);
         setPlayInterval(interval);
       }
     } else {
