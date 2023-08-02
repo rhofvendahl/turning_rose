@@ -7,14 +7,7 @@ const ViewFrame = ({ frame }: { frame: Frame }) => {
     return null;
   }
 
-  // const { scene } = frame.model;
-  // scene.traverse((child) => {
-  //   if (child.isMesh) {
-  //     child.customDepthMaterial.tra
-  //   }
-  // })
-
-  console.log("Viewing:", frame.index, frame.path.split("/").pop());
+  console.log("Viewing:", frame.index, frame.name);
   return <primitive object={frame.model.scene} scale={[4, 4, 4]} />;
 }
 

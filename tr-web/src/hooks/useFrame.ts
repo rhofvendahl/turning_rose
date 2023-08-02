@@ -1,18 +1,10 @@
 import { Mesh } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { createAsset } from 'use-asset';
 
 export interface Frame {
   index: number;
   name: string;
   model: GLTF | null;
-}
-
-export interface ModelAsset {
-  read: (modelName: string) => GLTF;
-  preload: (modelName: string) => void;
-  clear: (modelName: string) => void;
-  peek: (modelName: string) => void | GLTF;
 }
 
 export const MODEL_PATH_BASE = '/db/gltf/';
@@ -53,19 +45,19 @@ const configureModel = (model: GLTF) => {
   })
 }
 
-const loadModels = async ({ modelAsset, frames, currentFrameRef, setCurrentFrame }: {
-  modelAsset: ModelAsset,
+const loadModels = async ({ frames, currentFrameRef, setCurrentFrame }: {
   frames: Frame[],
   currentFrameRef: React.MutableRefObject<Frame | null>,
   setCurrentFrame: (x: any) => void,
 }) => {
+  const loader = new GLTFLoader();
+
   let nextIndex = getNextIndex(frames, currentFrameRef.current);
   let prevCurrentFrameRefValue = currentFrameRef.current;
   while (nextIndex !== null) {
     const loadingFrame = frames[nextIndex];
-    // Returns the promise the asset was passed, with the arguments provided here.
-    // If the specific arguments have already been passed in, it should return the same promise!
-    const model = await modelAsset.read(loadingFrame.name);
+    const model = await loader.loadAsync(MODEL_PATH_BASE + loadingFrame.name);
+
     configureModel(model);
     loadingFrame.model = model;
     if (currentFrameRef.current === null) {
@@ -89,7 +81,7 @@ const loadModels = async ({ modelAsset, frames, currentFrameRef, setCurrentFrame
     // Update for subsequent checks
     nextIndex = getNextIndex(frames, loadForwardFrom);
     prevCurrentFrameRefValue = latestCurrentFrameRefValue;
-  } 
+  }
 };
 
 const getFrames = async (): Promise<Frame[]> => {
@@ -112,15 +104,11 @@ export const useFrame = ({ frames, setFrames, currentFrameRef, setCurrentFrame }
   currentFrameRef: React.MutableRefObject<Frame | null>,
   setCurrentFrame: (x: any) => void, 
 }) => {
-
-  const loader = new GLTFLoader();
-  const modelAsset = createAsset(async (modelName: string) => loader.loadAsync(MODEL_PATH_BASE + modelName));
-  
   console.log('Loading frames...');
 
   getFrames()
     .then((frames) => {
       setFrames(frames);
-      loadModels({ modelAsset, frames, currentFrameRef, setCurrentFrame });
+      loadModels({ frames, currentFrameRef, setCurrentFrame });
     });
 };
