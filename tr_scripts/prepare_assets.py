@@ -2,7 +2,13 @@ import os
 import shutil
 
 
-from constants import RAW_OUTPUTS_DIRPATH, INTERMEDIATE_OUTPUTS_DIRPATH
+from constants import (
+    RAW_OUTPUTS_DIRPATH,
+    INTERMEDIATE_OUTPUTS_DIRPATH,
+    TEXTURE_FILENAME,
+    OBJ_FILENAME,
+    MTL_FILENAME,
+)
 from utils import get_names
 
 
@@ -42,22 +48,19 @@ def prepare_assets(
         dest_dirpath = os.path.join(dest_base_dirpath, name)
         os.makedirs(dest_dirpath, exist_ok=True)
 
-        texture_filename = "baked_mesh_tex0.png"
         if include_obj:
-            filename = "baked_mesh.obj"
-            source_filepath = os.path.join(source_dirpath, filename)
-            dest_filepath = os.path.join(dest_dirpath, filename)
+            source_filepath = os.path.join(source_dirpath, OBJ_FILENAME)
+            dest_filepath = os.path.join(dest_dirpath, OBJ_FILENAME)
             shutil.copy(source_filepath, dest_filepath)
 
-            filename = "baked_mesh.mtl"
-            source_filepath = os.path.join(source_dirpath, filename)
-            dest_filepath = os.path.join(dest_dirpath, filename)
+            source_filepath = os.path.join(source_dirpath, MTL_FILENAME)
+            dest_filepath = os.path.join(dest_dirpath, MTL_FILENAME)
             shutil.copy(source_filepath, dest_filepath)
-            process_mtl(dest_filepath, os.path.join(dest_dirpath, texture_filename))
+            process_mtl(dest_filepath, os.path.join(dest_dirpath, TEXTURE_FILENAME))
 
         if include_texture:
-            source_filepath = os.path.join(source_dirpath, texture_filename)
-            dest_filepath = os.path.join(dest_dirpath, texture_filename)
+            source_filepath = os.path.join(source_dirpath, TEXTURE_FILENAME)
+            dest_filepath = os.path.join(dest_dirpath, TEXTURE_FILENAME)
             shutil.copy(source_filepath, dest_filepath)
 
 

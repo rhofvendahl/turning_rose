@@ -4,7 +4,7 @@ import math
 import bpy
 import bmesh
 
-from constants import INTERMEDIATE_OUTPUTS_DIRPATH
+from constants import INTERMEDIATE_OUTPUTS_DIRPATH, OBJ_FILENAME
 from utils import get_names
 
 
@@ -63,7 +63,7 @@ def process_models(
         perform_blender_operations(
             source_dirpath,
             dest_dirpath,
-            "baked_mesh.obj",
+            OBJ_FILENAME,
             decimate_ratio,
             radius,
         )

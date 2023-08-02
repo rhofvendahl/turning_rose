@@ -9,7 +9,7 @@ from constants import (
     COMPLETE_OUTPUTS_DIRPATH,
     WEBAPP_GLTF_DIRPATH,
     WEBAPP_INDEX_FILEPATH,
-    WEBAPP_INDEX_PREFIX,
+    OBJ_FILENAME,
 )
 from utils import get_names
 
@@ -41,7 +41,7 @@ def export_gltf(
     for i, name in enumerate(names):
         print(i, name)
         source_dirpath = os.path.join(source_base_dirpath, name)
-        source_filepath = os.path.join(source_dirpath, "baked_mesh.obj")
+        source_filepath = os.path.join(source_dirpath, OBJ_FILENAME)
         dest_filepath = os.path.join(dest_dirpath, f"{name}.gltf")
         convert_to_gltf(source_filepath, dest_filepath)
 

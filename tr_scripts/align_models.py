@@ -6,13 +6,13 @@ from PIL import Image
 from scipy.optimize import least_squares
 from matplotlib import colors as plt_colors
 
-from constants import INTERMEDIATE_OUTPUTS_DIRPATH
+from constants import INTERMEDIATE_OUTPUTS_DIRPATH, OBJ_FILENAME, TEXTURE_FILENAME
 from utils import get_names
 
 
 # o3d.read_triangle_mesh doesn't grab colors
-def get_point_cloud(dirpath: str, name: str):
-    with open(os.path.join(dirpath, name + ".obj"), "r") as f:
+def get_point_cloud(dirpath):
+    with open(os.path.join(dirpath, OBJ_FILENAME), "r") as f:
         lines = f.readlines()
     # Get vertex and uv info from obj
     vertices = []
@@ -41,7 +41,7 @@ def get_point_cloud(dirpath: str, name: str):
                 vertex_uvs[vertex_idx] = uvs[uv_idx]
 
     # Get rbg values
-    img = Image.open(os.path.join(dirpath, "texgen_2.png"))
+    img = Image.open(os.path.join(dirpath, TEXTURE_FILENAME))
     img_width, img_height = img.size
     img_data = np.array(img)
 
@@ -284,12 +284,12 @@ def align_model(pcd, align_markers, ref_markers, inplace=False):
 def save_pcd(pcd, source_dirpath, dest_dirpath, name):
     os.makedirs(dest_dirpath, exist_ok=True)
 
-    with open(os.path.join(source_dirpath, name + ".obj"), "r") as f:
+    with open(os.path.join(source_dirpath, OBJ_FILENAME), "r") as f:
         lines = f.readlines()
     vertices = np.asarray(pcd.points)
 
     vertex_i = 0
-    with open(os.path.join(dest_dirpath, name + ".obj"), "w") as f:
+    with open(os.path.join(dest_dirpath, OBJ_FILENAME), "w") as f:
         for lines in lines:
             # NOTE: Only needed with photocatch output
             if lines.startswith("o watermark"):
@@ -316,7 +316,7 @@ def align_models(
     ref_name = names[ref_index]
     ref_dirpath = os.path.join(source_base_dirpath, ref_name)
 
-    ref_pcd = get_point_cloud(ref_dirpath, ref_name)
+    ref_pcd = get_point_cloud(ref_dirpath)
     ref_markers = get_markers(ref_pcd)
 
     print(f"ALIGNING (with {ref_name})")
@@ -326,7 +326,7 @@ def align_models(
         align_dest_dirpath = os.path.join(dest_base_dirpath, align_name)
         os.makedirs(align_dest_dirpath, exist_ok=True)
 
-        align_pcd = get_point_cloud(align_source_dirpath, align_name)
+        align_pcd = get_point_cloud(align_source_dirpath)
         align_markers = get_markers(align_pcd)
 
         align_model(align_pcd, align_markers, ref_markers, inplace=True)

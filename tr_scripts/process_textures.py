@@ -3,7 +3,7 @@ import os
 from PIL import Image
 import numpy as np
 
-from constants import INTERMEDIATE_OUTPUTS_DIRPATH
+from constants import INTERMEDIATE_OUTPUTS_DIRPATH, TEXTURE_FILENAME
 from utils import get_names
 
 
@@ -30,7 +30,7 @@ def filter_texture(input_dirpath, output_dirpath, lower_bound, upper_bound):
     lower_bound = scale_hsv(lower_bound)
     upper_bound = scale_hsv(upper_bound)
 
-    img = Image.open(os.path.join(input_dirpath, "texgen_2.png")).convert("RGBA")
+    img = Image.open(os.path.join(input_dirpath, TEXTURE_FILENAME)).convert("RGBA")
     img_np = np.array(img)
 
     # Convert to hsv
@@ -41,7 +41,7 @@ def filter_texture(input_dirpath, output_dirpath, lower_bound, upper_bound):
     img_np[in_range] = (0, 0, 0, 0)
 
     output_img = Image.fromarray(img_np)
-    output_img.save(os.path.join(output_dirpath, "texgen_2.png"))
+    output_img.save(os.path.join(output_dirpath, TEXTURE_FILENAME))
 
 
 def process_textures(
@@ -52,7 +52,6 @@ def process_textures(
 ):
     if names == None:
         names = get_names()
-    image_name = "baked_mesh_tex0.png"
 
     print("CLEANING")
     for i, name in enumerate(names):
@@ -69,14 +68,14 @@ def process_textures(
         # As a compromise, since resizing is a fast operation we are first resizing down to 1024
         # (unless new size is higher) once, then again after filtering.
         if new_size and new_size < 1024:
-            resize_image(source_dirpath, dest_dirpath, image_name, 1024)
+            resize_image(source_dirpath, dest_dirpath, TEXTURE_FILENAME, 1024)
 
         lower_bound = [180, 0, 0]
         upper_bound = [290, 30, 55]
         filter_texture(source_dirpath, dest_dirpath, lower_bound, upper_bound)
 
         if new_size:
-            resize_image(source_dirpath, dest_dirpath, image_name, new_size)
+            resize_image(source_dirpath, dest_dirpath, TEXTURE_FILENAME, new_size)
 
 
 if __name__ == "__main__":
