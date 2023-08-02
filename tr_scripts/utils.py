@@ -10,8 +10,6 @@ from constants import (
     TEMP_OUTPUTS_DIRPATH,
 )
 
-# TODO: Only return names of dirs that actually have content
-
 
 def get_names(dirpath: str = RAW_OUTPUTS_DIRPATH):
     names = []
@@ -68,30 +66,3 @@ def copy_to_temp(capture_name):
             shutil.copy2(input_filepath, output_filepath)
         else:
             print("MISSING IMAGE", image_name)
-
-
-def copy_assets(
-    input_base,
-    output_base,
-    names=None,
-    include_obj=False,
-    include_img=False,
-    use_jpg=False,
-):
-    if names == None:
-        names = get_names()
-    img_ext = ".jpg" if use_jpg else ".png"
-
-    for name in names:
-        input_dirpath = os.path.join(input_base, name)
-        output_dirpath = os.path.join(output_base, name)
-        os.makedirs(output_dirpath, exist_ok=True)
-
-        shutil.copy(os.path.join(input_dirpath, name + ".mtl"), output_dirpath)
-
-        if include_img:
-            shutil.copy(
-                os.path.join(input_dirpath, "texgen_2" + img_ext), output_dirpath
-            )
-        if include_obj:
-            shutil.copy(os.path.join(input_dirpath, name + ".obj"), output_dirpath)
