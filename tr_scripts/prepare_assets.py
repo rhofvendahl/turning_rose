@@ -13,7 +13,7 @@ def process_mtl(mtl_filepath: str, texture_filepath):
     with open(mtl_filepath, "w") as f:
         for line in lines:
             if line.startswith("map_Kd "):
-                new_line = f"map_Kd {texture_filepath}"
+                new_line = f"map_Kd {texture_filepath}\n"
                 f.write(new_line)
             # Don't include normal map
             elif line.startswith("norm "):
@@ -39,11 +39,11 @@ def prepare_assets(
     for i, name in enumerate(names):
         print(i, name)
         source_dirpath = os.path.join(source_base_dirpath, name)
+        dest_dirpath = os.path.join(dest_base_dirpath, name)
+        os.makedirs(dest_dirpath, exist_ok=True)
 
+        texture_filename = "baked_mesh_tex0.png"
         if include_obj:
-            dest_dirpath = os.path.join(dest_base_dirpath, name)
-            os.makedirs(dest_dirpath, exist_ok=True)
-
             filename = "baked_mesh.obj"
             source_filepath = os.path.join(source_dirpath, filename)
             dest_filepath = os.path.join(dest_dirpath, filename)
@@ -53,15 +53,11 @@ def prepare_assets(
             source_filepath = os.path.join(source_dirpath, filename)
             dest_filepath = os.path.join(dest_dirpath, filename)
             shutil.copy(source_filepath, dest_filepath)
-            process_mtl(dest_filepath)
+            process_mtl(dest_filepath, os.path.join(dest_dirpath, texture_filename))
 
         if include_texture:
-            dest_dirpath = os.path.join(dest_base_dirpath, name)
-            os.makedirs(dest_dirpath, exist_ok=True)
-
-            filename = "baked_mesh_tex0.png"
-            source_filepath = os.path.join(source_dirpath, filename)
-            dest_filepath = os.path.join(dest_dirpath, filename)
+            source_filepath = os.path.join(source_dirpath, texture_filename)
+            dest_filepath = os.path.join(dest_dirpath, texture_filename)
             shutil.copy(source_filepath, dest_filepath)
 
 
