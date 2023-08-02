@@ -1,39 +1,43 @@
 import { Mesh } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { createAsset } from 'use-asset';
 
 export interface Frame {
   index: number;
-  path: string;
+  name: string;
   model: GLTF | null;
 }
 
-const getNextIndex = (frames: Frame[], currentFrame: Frame | null): number | null => {
-  if (currentFrame === null) {
+export interface ModelAsset {
+  read: (modelName: string) => GLTF;
+  preload: (modelName: string) => void;
+  clear: (modelName: string) => void;
+  peek: (modelName: string) => void | GLTF;
+}
+
+export const MODEL_PATH_BASE = '/db/gltf/';
+
+const getNextIndex = (frames: Frame[], loadForwardFrom: Frame | null): number | null => {
+  if (loadForwardFrom === null) {
     return 0;
   }
 
   // First load from the current frame onward; the current frame should already be loaded but no harm checking
-  for (let i = currentFrame.index; i < frames.length; i++) {
+  for (let i = loadForwardFrom.index; i < frames.length; i++) {
     if (frames[i].model === null) {
       return i;
     }
   }
   // If everything ahead is loaded, load any skipped frames
-  for (let i = 0; i < currentFrame.index; i++) {
+  for (let i = 0; i < loadForwardFrom.index; i++) {
     if (frames[i].model === null) {
       return i;
     }
   }
   // All frames loaded
-  console.log("All frames loaded:", frames);
+  console.log('All frames loaded:', frames);
   return null;
 };
-
-interface Params {
-  frames: Frame[];
-  currentFrame: Frame | null;
-  setCurrentFrame: (x: any) => void;
-}
 
 // Modifies model inplace
 const configureModel = (model: GLTF) => {
@@ -49,27 +53,74 @@ const configureModel = (model: GLTF) => {
   })
 }
 
-const loadNext = async ({ frames, currentFrame, setCurrentFrame }: Params) => {
-  const loader = new GLTFLoader();
-  
-  let nextIndex = getNextIndex(frames, currentFrame);
-  // There's a clever way to use a for loop, but I was finding it confusing
+const loadModels = async ({ modelAsset, frames, currentFrameRef, setCurrentFrame }: {
+  modelAsset: ModelAsset,
+  frames: Frame[],
+  currentFrameRef: React.MutableRefObject<Frame | null>,
+  setCurrentFrame: (x: any) => void,
+}) => {
+  let nextIndex = getNextIndex(frames, currentFrameRef.current);
+  let prevCurrentFrameRefValue = currentFrameRef.current;
   while (nextIndex !== null) {
-    const nextFrame = frames[nextIndex];
-    const model = await loader.loadAsync(nextFrame.path);
+    const loadingFrame = frames[nextIndex];
+    // Returns the promise the asset was passed, with the arguments provided here.
+    // If the specific arguments have already been passed in, it should return the same promise!
+    const model = await modelAsset.read(loadingFrame.name);
     configureModel(model);
-    nextFrame.model = model;
-    if (currentFrame === null) {
-      setCurrentFrame(nextFrame);
-      currentFrame = nextFrame;
+    loadingFrame.model = model;
+    if (currentFrameRef.current === null) {
+      setCurrentFrame(loadingFrame);
+      prevCurrentFrameRefValue = loadingFrame
     }
-    nextIndex = getNextIndex(frames, currentFrame);
+    // In theory setCurrentFrame should result in the recalculation of currentFrameRef, but timing may be unreliable.
+    // So, currentFrameRef.current should have either the previous currentFrameValue, or the one that's just been set.
+    // If it's something else, however, that means somewhere external has changed it, in which case that new value
+    // should be respected as the new place to load forward from.
+    const latestCurrentFrameRefValue = currentFrameRef.current;
+    const currentFrameJump = latestCurrentFrameRefValue?.name !== prevCurrentFrameRefValue?.name && latestCurrentFrameRefValue?.name !== loadingFrame.name;
+
+    // The usual case, in which loading continues from the latest loaded frame
+    let loadForwardFrom = loadingFrame;
+    // The case where something like the user skipping forward has happened, causing currentFrame to change unexpectedly
+    if (currentFrameJump && latestCurrentFrameRefValue !== null) {
+      console.log("Current frame jump detected; modifying load order.")
+      loadForwardFrom = latestCurrentFrameRefValue;
+    }
+    // Update for subsequent checks
+    nextIndex = getNextIndex(frames, loadForwardFrom);
+    prevCurrentFrameRefValue = latestCurrentFrameRefValue;
   } 
 };
 
+const getFrames = async (): Promise<Frame[]> => {
+    const response = await fetch('/db/json/modelNames.json');
+    const modelNames: string[] = await response.json();
+    const frames = modelNames.map((name, i) => {
+      const frame: Frame = {
+        index: i,
+        name: name,
+        model: null,
+      };
+      return frame;
+    });
+    return frames;
+}
 
+export const useFrame = ({ frames, setFrames, currentFrameRef, setCurrentFrame }: {
+  frames: Frame[],
+  setFrames: (x: any) => void,
+  currentFrameRef: React.MutableRefObject<Frame | null>,
+  setCurrentFrame: (x: any) => void, 
+}) => {
 
-export const useFrame = ({ frames, currentFrame, setCurrentFrame }: Params) => {
+  const loader = new GLTFLoader();
+  const modelAsset = createAsset(async (modelName: string) => loader.loadAsync(MODEL_PATH_BASE + modelName));
+  
   console.log('Loading frames...');
-  loadNext({ frames, currentFrame, setCurrentFrame });
+
+  getFrames()
+    .then((frames) => {
+      setFrames(frames);
+      loadModels({ modelAsset, frames, currentFrameRef, setCurrentFrame });
+    });
 };
