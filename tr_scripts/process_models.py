@@ -71,5 +71,5 @@ def process_models(
 
 if __name__ == "__main__":
     names = get_names()
-    process_models(names[:-1], 0.4)
+    process_models(names[:-1], 0.5)
     process_models(names[-1:], 0.5)

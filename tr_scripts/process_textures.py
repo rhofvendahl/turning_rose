@@ -80,5 +80,6 @@ def process_textures(
 
 if __name__ == "__main__":
     names = get_names()
+    # 512/1024 is a good compromise
     process_textures(names[:-1], 512)
     process_textures(names[-1:], 1024)
