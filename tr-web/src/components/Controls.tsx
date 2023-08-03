@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { Frame } from '../hooks/useFrame';
 import SpeedSlider from './SpeedSlider';
-// import PositionSlider from './PositionSlider';
 
 import './Controls.css';
 import { SPEED_CONSTANTS, LoopType, LOADED_THRESHOLD } from '../shared/speedStuff';
@@ -11,8 +10,7 @@ import { SPEED_CONSTANTS, LoopType, LOADED_THRESHOLD } from '../shared/speedStuf
 
 // The idea is that the speed is fast at the start, gets slow near the end (time to view rose), slowly moves backward, speeds up til the start, then can bounce back forward again.
 // To do this we'll need a cosine function, with x as position and y as the rate of change (fps).
-// Position has range [0, 1), returned speed has range [SPEED_MIN, SPEED_MAX]
-// UPDATE: Let's try position with range [0, 1], see what happens. Might be convenient.
+// Position has range [0, 1], returned speed has range [SPEED_MIN, SPEED_MAX]
 const getSpeedBouncy = (position: number): number => {
   // At position = 1, we should be at the steep downward part of the cosine curve (1/4 through a period)
   const angle = position * (2 * Math.PI) / 4;
@@ -97,11 +95,9 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
   currentFrame: Frame | null,
   setCurrentFrame: (frame: Frame) => void
 }) => {
-  // NOTE: I may be able to get rid of playing later on,m in favor of playSpeed = 0
-  const [playing, setPlaying] = useState(false);
   const [playTimeout, setPlayTimeout] = useState<number | null>(null);
   // speed has range [SPEED_MIN, SPEED_MAX]
-  const [playSpeed, setPlaySpeed] = useState<number>(0);
+  const [playSpeed, setPlaySpeed] = useState<number | null>(null);
   // true is forward, false is back
   const [playDirection, setPlayDirection] = useState<boolean>(true);
   // NOTE: Probably will change this to speedControlType
@@ -118,12 +114,12 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
     if (frames.length === 0) {
       return;
     }
-    setPlaying(false);
-    waitOnLoading(frames, 0, LOADED_THRESHOLD, () => setPlaying(true));
+    waitOnLoading(frames, 0, LOADED_THRESHOLD, () => setPlaySpeed(SPEED_CONSTANTS.PLAY));
   }, [frames]);
 
   useEffect(() => {
-    if (playing) {
+    // If slider is set to positive or if it's supposed to be looping
+    if (playSpeed !== null) {
       // Set play interval going if playing but no timeout (e.g. if frame transition has finished)
       if (playTimeout === null) {
         if (currentFrame === null) {
@@ -131,8 +127,9 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
         };
         if (currentFrame.model === null) {
           // Wait a bit to allow loading to continue
-          setPlaying(false);
-          waitOnLoading(frames, currentFrame.index, LOADED_THRESHOLD, () => setPlaying(true));
+          const prevPlaySpeed = playSpeed;
+          setPlaySpeed(null);
+          waitOnLoading(frames, currentFrame.index, LOADED_THRESHOLD, () => setPlaySpeed(prevPlaySpeed));
           return;
         }
         const [speed, direction] = getNewSpeedDirection({
@@ -143,7 +140,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           loopType: playLoopType,
         });
         if (speed === null) {
-          setPlaying(false);
+          setPlaySpeed(null);
           setPlayTimeout(null);
           return;
         }
@@ -162,7 +159,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
         setPlayTimeout(timeout);
       }
     }
-  }, [playing, playTimeout]);
+  }, [playSpeed, playTimeout]);
 
   return (
     <div>
@@ -170,7 +167,8 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
         <button id="loop-button" className={ playLoopType ? `${playLoopType}-loop` : `no-loop`} onClick={() => {
           // Toggle between no loop and bouncy loop
           setPlayLoopType(playLoopType ? null : 'bouncy');
-          setPlaying(true);
+          // The value shouldn't matter, as it's about to be overwritten as a result
+          setPlaySpeed(SPEED_CONSTANTS.PLAY);
         }}>Loop</button>
       </div>
       <div id='slider-container'>
@@ -179,18 +177,8 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           setPlaySpeed={setPlaySpeed}
           playDirection={playDirection}
           setPlayDirection={setPlayDirection}
-          playing={playing}
-          setPlaying={setPlaying}
           setLoopType={setPlayLoopType}
         />
-        {/* Cool, but distracting + redundant */}
-        {/* <PositionSlider
-          frames={frames}
-          currentFrame={currentFrame}
-          setCurrentFrame={setCurrentFrame}
-          playing={playing}
-          setPlaying={setPlaying}
-        /> */}
       </div>
     </div>
   );

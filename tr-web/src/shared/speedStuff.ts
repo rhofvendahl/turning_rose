@@ -25,18 +25,18 @@ export type LoopType = 'bouncy' | 'cyclic' | 'linear' | null;
 // Constant for now; might want to make it dependent on internet speed or something, later
 export const LOADED_THRESHOLD = 5;
 
-
 // How close speed slider should be to 0 before snapping there
-export const SNAP_FROM = 2;
+export const SNAP_FROM = 4;
 
-export const speedDirectionToSliderValue = (speed: number, direction: boolean): number => {
-  console.log("TO VAL", speed, direction, direction ? (speed - SPEED_CONSTANTS.MIN) : - (speed - SPEED_CONSTANTS.MIN));
+export const speedDirectionToSliderValue = (speed: number | null, direction: boolean): number => {
+  if (speed === null) {
+    return 0;
+  }
   return direction ? (speed - SPEED_CONSTANTS.MIN) : - (speed - SPEED_CONSTANTS.MIN);
 };
 
-export const sliderValueToSpeedDirection = (sliderValue: number): [number, boolean] => {
+export const sliderValueToSpeedDirection = (sliderValue: number): [number | null, boolean] => {
   const direction = sliderValue >= 0;
-  const speed = Math.abs(sliderValue) + SPEED_CONSTANTS.MIN;
-  console.log("FROM VAL", sliderValue, speed, direction);
+  const speed = sliderValue === 0 ? null : Math.abs(sliderValue) + SPEED_CONSTANTS.MIN;
   return [speed, direction];
 };

@@ -3,11 +3,10 @@ import React from 'react';
 import './Slider.css';
 import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, LoopType } from '../shared/speedStuff';
 
-const SpeedModeInput = ({ modeType, setPlaySpeed, setPlayDirection, setPlaying, setLoopType }: {
+const SpeedModeInput = ({ modeType, setPlaySpeed, setPlayDirection, setLoopType }: {
   modeType: ModeInputType,
-  setPlaySpeed: (speed: number) => void,
+  setPlaySpeed: (speed: number | null) => void,
   setPlayDirection: (direction: boolean) => void,
-  setPlaying: (playing: boolean) => void,
   setLoopType: (type: LoopType) => void,
 }) => {
   let value: number;
@@ -36,19 +35,9 @@ const SpeedModeInput = ({ modeType, setPlaySpeed, setPlayDirection, setPlaying, 
         readOnly
         onClick={() => {
           setLoopType(null);
-          if (value === 0) {
-            // Don't do anything with playSpeed or playDirection for now
-            // Definitely going to want to get rid of playing and add playspeed === null
-            setPlaySpeed(SPEED_CONSTANTS.MIN);
-            setPlayDirection(true);
-            setPlaying(false);
-          } else {
-            const [speed, direction] = sliderValueToSpeedDirection(value);
-            console.log("SPEED DIR", speed, direction)
-            setPlaySpeed(speed);
-            setPlayDirection(direction);
-            setPlaying(true);
-          }
+          const [speed, direction] = sliderValueToSpeedDirection(value);
+          setPlaySpeed(speed);
+          setPlayDirection(direction);
         }}
       />
   );
