@@ -30,8 +30,8 @@ const App = () => {
   
   return (
     <div id='content-container'>
-        <Controls frames={frames} currentFrame={currentFrame} setCurrentFrame={setCurrentFrame} />
       <div id='controls-wrapper'>
+        <Controls frames={frames} currentFrame={currentFrame} setCurrentFrame={setCurrentFrame} />
       </div>
       <Canvas id='canvas'>
         <ambientLight intensity={1} />

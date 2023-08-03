@@ -101,9 +101,9 @@ const getFrames = async (): Promise<Frame[]> => {
 
 export const useFrame = ({ frames, setFrames, currentFrameRef, setCurrentFrame }: {
   frames: Frame[],
-  setFrames: (x: any) => void,
+  setFrames: (frames: Frame[]) => void,
   currentFrameRef: React.MutableRefObject<Frame | null>,
-  setCurrentFrame: (x: any) => void, 
+  setCurrentFrame: (frame: Frame) => void, 
 }) => {
   console.log('Loading frames...');
 
