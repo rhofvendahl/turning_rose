@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import SpeedModeInput from './SpeedModeInput';'./SpeedModeInput';
 import { SPEED_CONSTANTS, LoopType, SNAP_FROM, speedDirectionToSliderValue, sliderValueToSpeedDirection } from "../shared/speedStuff"
 
-import './Slider.css';
+import './SpeedSlider.css';
 
 const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, setLoopType }: {
   playSpeed: number | null,

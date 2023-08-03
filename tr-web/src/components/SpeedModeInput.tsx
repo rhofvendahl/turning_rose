@@ -1,7 +1,8 @@
 import React from 'react';
 
-import './Slider.css';
 import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, LoopType } from '../shared/speedStuff';
+
+import './SpeedModeInput.css';
 
 const SpeedModeInput = ({ modeType, setPlaySpeed, setPlayDirection, setLoopType }: {
   modeType: ModeInputType,
