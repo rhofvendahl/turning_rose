@@ -2,25 +2,24 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { Frame } from '../hooks/useFrame';
 import SpeedSlider from './SpeedSlider';
-import PositionSlider from './PositionSlider';
+// import PositionSlider from './PositionSlider';
 
 import './Controls.css';
+import { SPEED_CONSTANTS, LoopType, LOADED_THRESHOLD } from '../shared/speedStuff';
 
-const SPEED_MIN = 2;
-const SPEED_MAX = 30;
-
-type ControlType = 'bouncy' | 'cyclic' | 'slider';
+// GENERAL NOTE: "Speed" throughout is always positive, and "direction" is a boolean where true=forward & false=backward
 
 // The idea is that the speed is fast at the start, gets slow near the end (time to view rose), slowly moves backward, speeds up til the start, then can bounce back forward again.
 // To do this we'll need a cosine function, with x as position and y as the rate of change (fps).
 // Position has range [0, 1), returned speed has range [SPEED_MIN, SPEED_MAX]
+// UPDATE: Let's try position with range [0, 1], see what happens. Might be convenient.
 const getSpeedBouncy = (position: number): number => {
   // At position = 1, we should be at the steep downward part of the cosine curve (1/4 through a period)
   const angle = position * (2 * Math.PI) / 4;
   // Cosine has range [0, 1], I think (could be off-by-one-ish)
   const cosine = Math.cos(angle);
   // Scale it to prevent zero values (they mess stuff up)
-  return cosine * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
+  return cosine * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 };
 
 // For this one the speed begins slow, speeds up in the middle, then ends slow. So, 1/2 the period of a sine wave (if those terms make sense).
@@ -28,60 +27,52 @@ const getSpeedCyclic = (position: number): number => {
   const angle = position * (2 * Math.PI) / 2;
   // The peak of a standard cosine function is 1
   const sine = Math.sin(angle);
-  return sine * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
+  return sine * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 };
 
-// Returns a value with range [0, 1) representing the rate appropriate to some position, ignoring forward/back
-const getSpeed = (position: number, controlType: ControlType): number => {
+const getSpeedLinear = (position: number): number => {
+  return position * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
+}
+
+const getLoopSpeed = (position: number, controlType: LoopType): number => {
   switch (controlType) {
     case 'bouncy':
       return getSpeedBouncy(position);
     case 'cyclic':
       return getSpeedCyclic(position);
-    // This really shouldn't happen
-    case 'slider':
+    case 'linear':
+      return getSpeedLinear(position);
+    // This shouldn't happen
+    case null:
       return 0;
   }
 }
 
-// Bouncy, cyclic and slider rates all have range (-1, 1)
-// NOTE: Relative rate does NOT correspond directly to fps. Basically the magnitude of the rate is scaled to be between ABS_RATE_MIN and ABS_RATE_MAX,
-// and then the direction is applied to that value. Weird, but couldn't think of better.
-const getNewSpeedDirection = ({ frameIndex, nFrames, prevSpeed, prevDirection, controlType, loop }: {
+const getNewSpeedDirection = ({ frameIndex, nFrames, prevSpeed, prevDirection, loopType }: {
   frameIndex: number,
   nFrames: number,
   prevSpeed: number,
   prevDirection: boolean,
-  controlType: ControlType,
-  loop: boolean,
-}): [number, boolean] => {
-  const position = frameIndex / nFrames;
+  loopType: LoopType,
+}): [number | null, boolean] => {
+  // Position 0 if 0 or 1 frames
+  const position = nFrames > 1 ? frameIndex / (nFrames - 1) : 0;
   const atStart = frameIndex <= 0;
   const atEnd = frameIndex >= nFrames - 1;
 
   const reachedTerminus = prevDirection && atEnd || !prevDirection && atStart;
-  if (controlType === 'slider') {
+  if (loopType === null) {
     // Stop if appropriate
     if (reachedTerminus) {
-      return [0, prevDirection];
+      return [null, prevDirection];
     }
     return [prevSpeed, prevDirection];
   }
-  // If it's not a loop, be ready to stop
-  if (!loop) {
-    if (reachedTerminus) {
-      return [0, prevDirection];
-    }
-  }
-  let speed = getSpeed(position, controlType);
+  const speed = getLoopSpeed(position, loopType);
   // Since it's a loop, be ready to turn around
   const direction = reachedTerminus ? !prevDirection : prevDirection;
   return [speed, direction];
 };
-
-// The number of frames that must be loaded before play starts
-// Constant for now; might want to make it dependent on internet speed or something, later
-const LOADED_THRESHOLD = 5;
 
 // Call some function after n frames past current have loaded
 const waitOnLoading = (frames: Frame[], currentFrameIndex: number, loadedThreshold: number, callOnLoaded: () => void) => {
@@ -106,13 +97,15 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
   currentFrame: Frame | null,
   setCurrentFrame: (frame: Frame) => void
 }) => {
+  // NOTE: I may be able to get rid of playing later on,m in favor of playSpeed = 0
   const [playing, setPlaying] = useState(false);
   const [playTimeout, setPlayTimeout] = useState<number | null>(null);
   // speed has range [SPEED_MIN, SPEED_MAX]
   const [playSpeed, setPlaySpeed] = useState<number>(0);
   // true is forward, false is back
   const [playDirection, setPlayDirection] = useState<boolean>(true);
-  const [playControlType, setPlayControlType] = useState<ControlType>('bouncy');
+  // NOTE: Probably will change this to speedControlType
+  const [playLoopType, setPlayLoopType] = useState<LoopType>('bouncy');
 
   // This allows access to the latest frame from within a timeout function
   const currentFrameRef = useRef(currentFrame);
@@ -147,22 +140,21 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           nFrames: frames.length,
           prevSpeed: playSpeed,
           prevDirection: playDirection,
-          controlType: playControlType,
-          // Might actually use this later
-          loop: playControlType == 'bouncy' || playControlType == 'cyclic',
+          loopType: playLoopType,
         });
-        setPlaySpeed(speed);
-        setPlayDirection(direction);
-        if (speed === 0) {
+        if (speed === null) {
           setPlaying(false);
           setPlayTimeout(null);
           return;
         }
+        setPlaySpeed(speed);
+        setPlayDirection(direction);
         const interval = 1 / speed * 1000;
         const timeout = window.setTimeout(() => {
           if (currentFrameRef.current === null) {
             return;
           }
+          // TODO: Add some checks (but for now relying on getNewSpeedDirection)
           const nextFrameIndex = direction ? currentFrameRef.current.index + 1 : currentFrameRef.current.index - 1;
           setCurrentFrame(frames[nextFrameIndex]);
           setPlayTimeout(null);
@@ -175,25 +167,10 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
   return (
     <div>
       <div id='buttons-container'>
-        <button onClick={() => {
-          // If player is at the start then play almost certainly means 'go forward'
-          if (currentFrame && currentFrame.index === 0) {
-            setPlayDirection(true);
-            // Split the difference
-            setPlaySpeed((SPEED_MAX + SPEED_MIN) / 2);
-          }
+        <button id="loop-button" className={ playLoopType ? `${playLoopType}-loop` : `no-loop`} onClick={() => {
+          // Toggle between no loop and bouncy loop
+          setPlayLoopType(playLoopType ? null : 'bouncy');
           setPlaying(true);
-        }}>Play</button>
-        <button onClick={() => {
-          setPlaying(false);
-        }}>Pause</button>
-        <button onClick={() => {
-          setPlayControlType('bouncy');
-          setPlaying(true);
-          if (currentFrame !== null && currentFrame.index + 1 < frames.length) {
-            const nextFrame = frames[currentFrame.index + 1];
-            setCurrentFrame(nextFrame);
-          }
         }}>Loop</button>
       </div>
       <div id='slider-container'>
@@ -204,17 +181,16 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           setPlayDirection={setPlayDirection}
           playing={playing}
           setPlaying={setPlaying}
-          setControlType={setPlayControlType}
-          minSpeed={SPEED_MIN}
-          maxSpeed={SPEED_MAX}
+          setLoopType={setPlayLoopType}
         />
-        <PositionSlider
+        {/* Cool, but distracting + redundant */}
+        {/* <PositionSlider
           frames={frames}
           currentFrame={currentFrame}
           setCurrentFrame={setCurrentFrame}
           playing={playing}
           setPlaying={setPlaying}
-        />
+        /> */}
       </div>
     </div>
   );

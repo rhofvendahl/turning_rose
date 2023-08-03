@@ -3,6 +3,7 @@ import { Frame } from '../hooks/useFrame';
 
 import './Slider.css';
 
+// NOTE: At this time PositionSlider is unused, and as development continues elsewhere may fail to integrate back in
 const PositionSlider = ({ frames, currentFrame, setCurrentFrame, playing, setPlaying }: {
   frames: Frame[],
   currentFrame: Frame | null,
