@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { Frame } from "../hooks/useFrame";
+import PositionSlider from "./PositionSlider";
 import SpeedSlider from "./SpeedSlider";
 import SpeedModeButton from "./SpeedModeButton";
+import { SPEED_CONSTANTS, ControlType, LOADED_THRESHOLD } from "../shared/controlsStuff";
 
 import "./Controls.css";
-import { SPEED_CONSTANTS, ControlType, LOADED_THRESHOLD } from "../shared/speedStuff";
 
 // GENERAL NOTE: "Speed" throughout is always positive, and "direction" is a boolean where true=forward & false=backward
 
@@ -154,7 +155,12 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           }
           // TODO: Add some checks (but for now relying on getNewSpeedDirection)
           const nextFrameIndex = direction ? currentFrameRef.current.index + 1 : currentFrameRef.current.index - 1;
-          setCurrentFrame(frames[nextFrameIndex]);
+          if (nextFrameIndex < frames.length && nextFrameIndex >= 0) {
+            setCurrentFrame(frames[nextFrameIndex]);
+          } else {
+            // Can happen, if position slider maxes out before currentFrameRef re-renders (is my theory for why)
+            console.log("'nextFrameIndex' out of range:", nextFrameIndex);
+          }
           setPlayTimeout(null);
         }, interval);
         setPlayTimeout(timeout);
@@ -183,6 +189,13 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
         setPlaySpeed={setPlaySpeed}
         playDirection={playDirection}
         setPlayDirection={setPlayDirection}
+        controlType={playControlType}
+        setControlType={setPlayControlType}
+      />
+      <PositionSlider
+        currentFrame={currentFrame}
+        setCurrentFrame={setCurrentFrame}
+        frames={frames}
         setControlType={setPlayControlType}
       />
     </div>

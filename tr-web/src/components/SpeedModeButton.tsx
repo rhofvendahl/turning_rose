@@ -2,7 +2,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition, faBackward, faPause, faPlay, faForward } from "@fortawesome/free-solid-svg-icons";
 
-import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, ControlType } from "../shared/speedStuff";
+import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, ControlType } from "../shared/controlsStuff";
 
 import "./SpeedModeButton.css";
 
