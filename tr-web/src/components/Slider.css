@@ -21,6 +21,7 @@ input[type=range] {
     margin: 0;
     overflow: hidden;
     -webkit-appearance: none;
+    appearance: none;
     background: transparent;
     height: var(--track-height);
     background-color: var(--track-left-color);
