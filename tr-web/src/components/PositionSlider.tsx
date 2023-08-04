@@ -19,7 +19,7 @@ const PositionSlider = ({ currentFrame, setCurrentFrame, frames, setControlType 
   }, [currentFrame, frames]);
 
   return (
-    <input id="speed-slider"
+    <input id="position-slider"
       type="range"
         min="0"
         max={frames.length - 1}

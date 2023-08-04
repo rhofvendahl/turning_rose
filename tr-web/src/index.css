@@ -1,7 +1,23 @@
+/* Global CSS variables */
+:root {
+    --canvas-color: #0f0f0f;
+    --control-background-color: #2a2a2a;
+    --control-foreground-color: #666666;
+    /* --control-prominent-color: #cccccc; */
+    --control-prominent-color: #bbbbbb;
+    /* --track-left-color: #4f4f4f; */
+    --text-light: #777777;
+    --text-dark: #1a1a1a;
+    --rose-pink: #D5B3D0;
+    --leaf-green: #557A46;
+    --leaf-green-dark: #202317;
+}
+
 html, body, #root {
   height: 100%;
 }
 
 body {
   margin: 0;
+  font-family: Arial, sans-serif;
 }

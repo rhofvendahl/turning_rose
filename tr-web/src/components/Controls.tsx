@@ -177,7 +177,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           // The value shouldn't matter, as it's about to be overwritten as a result
           setPlaySpeed(SPEED_CONSTANTS.MIN);
         }
-      }}>Loop</div>
+      }}>{ playControlType === "manual" ? "Loop" : "Looping"}</div>
       <div id="speed-mode-buttons">
         <SpeedModeButton modeType={"rewind"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
         <SpeedModeButton modeType={"pause"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
@@ -190,7 +190,6 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           setPlaySpeed={setPlaySpeed}
           playDirection={playDirection}
           setPlayDirection={setPlayDirection}
-          controlType={playControlType}
           setControlType={setPlayControlType}
         />
       </div>

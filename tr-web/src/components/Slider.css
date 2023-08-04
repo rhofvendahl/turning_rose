@@ -1,0 +1,99 @@
+/* NOTE: Some guide recommended :focus selector stuff; I'm not doing that */
+
+/* STYLE VARIABLE DEFINITIONS */
+input[type=range] {
+    --track-height: 12px;
+    --track-border-radius: 3px;
+    --thumb-width: 24px;
+    --thumb-border-radius: 3px;
+    --thumb-color: var(--control-foreground-color);
+    --track-left-color: var(--control-background-color);
+    --track-right-color: #1a1a1a;
+    /* NOTE: This is a hacky way of setting the after-thumb track color */
+    /* (The +5 to x-offset makes it so shadow starts in middle of thumb) */
+    --box-shadow-hack: 4005px 0 0 4000px var(--track-right-color);
+}
+
+/* GENERAL */
+
+input[type=range] {
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+    -webkit-appearance: none;
+    background: transparent;
+    height: var(--track-height);
+    background-color: var(--track-left-color);
+    border-radius: var(--track-border-radius);
+}
+
+/* CHROME ETC. */
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: var(--track-height);
+    -webkit-appearance: none;
+}
+
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: var(--track-height);
+    /* height: 100px; */
+    width: var(--thumb-width);
+    border-radius: var(--thumb-border-radius);
+    background: var(--thumb-color);
+    box-shadow: var(--box-shadow-hack);
+    -webkit-box-shadow: var(--box-shadow-hack);
+}
+
+/* MICROSOFT */
+
+input[type=range]::-ms-track {
+    width: 100%;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+}
+
+
+input[type=range]::-ms-track {
+    width: 100%;
+    height: var(--track-height);
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+}
+
+input[type=range]::-ms-fill-lower {
+    background: var(--track-left-color);
+}
+
+input[type=range]::-ms-fill-upper {
+    background: var(--track-right-color);
+}
+
+input[type=range]::-ms-thumb {
+    height: var(--track-height);
+    width: var(--thumb-width);
+    border-radius: var(--thumb-border-radius);
+    background: var(--thumb-color);
+}
+
+/* FIREFOX */
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: var(--track-height);
+    background: var(--track-left-color);
+    border-radius: var(--track-border-radius);
+}
+
+input[type=range]::-moz-range-thumb {
+    height: var(--track-height);
+    width: var(--thumb-width);
+    border-radius: var(--thumb-border-radius);
+    background: var(--thumb-color);
+    box-shadow: var(--box-shadow-hack);
+    border: none;
+}

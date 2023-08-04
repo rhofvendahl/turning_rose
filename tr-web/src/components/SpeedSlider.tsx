@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 
 import { SPEED_CONSTANTS, ControlType, speedDirectionToSliderValue, sliderValueToSpeedDirection } from "../shared/controlsStuff"
 
-import "./SpeedSlider.css";
+import "./Slider.css";
 
-const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, controlType, setControlType }: {
+const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, setControlType }: {
   playSpeed: number | null,
   setPlaySpeed: (speed: number | null) => void,
   playDirection: boolean,
   setPlayDirection: (direction: boolean) => void,
-  controlType: ControlType,
   setControlType: (type: ControlType) => void,
 }) => {
   const [sliderValue, setSliderValue] = useState(speedDirectionToSliderValue(playSpeed, playDirection));

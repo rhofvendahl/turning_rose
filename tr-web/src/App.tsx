@@ -7,8 +7,8 @@ import ViewFrame from "./components/ViewFrame";
 import Controls from "./components/Controls";
 import { useFrame, Frame } from "./hooks/useFrame";
 
-// This doesn"t seem ideal, but even useEffect with empty inputs within App seems to run twice over the app"s lifecycle - no good.
-let useFrameDidRun = false;
+// This doesn't seem ideal, but even useEffect with empty inputs within App seems to run twice over the app"s lifecycle - no good.
+let hasInitialized = false;
 
 const App = () => {
   const [frames, setFrames] = useState<Frame[]>([]);
@@ -22,9 +22,9 @@ const App = () => {
 
   // useEffect necessary for React to notice currentFrame update
   useEffect(() => {
-    if (!useFrameDidRun) {
+    if (!hasInitialized) {
       useFrame({ frames, setFrames, currentFrameRef, setCurrentFrame });
-      useFrameDidRun = true;
+      hasInitialized = true;
     }
   }, []);
   
@@ -36,7 +36,9 @@ const App = () => {
       <Canvas id="canvas">
         <ambientLight intensity={1} />
         <OrbitControls />
-       { currentFrame && <ViewFrame frame={currentFrame} /> }
+        <mesh position={[0, .2, 0]}>
+          { currentFrame && <ViewFrame frame={currentFrame} /> }
+        </mesh>
       </Canvas>
     </div>
   );
