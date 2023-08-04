@@ -19,7 +19,7 @@ const getSpeedBouncy = (position: number): number => {
   // Cosine has range [0, 1], I think (could be off-by-one-ish)
   const cosine = Math.cos(angle);
   // Scale it to prevent zero values (they mess stuff up)
-  return cosine * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
+  return cosine * (SPEED_CONSTANTS.LOOP_CAP - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 };
 
 // For this one the speed begins slow, speeds up in the middle, then ends slow. So, 1/2 the period of a sine wave (if those terms make sense).
@@ -27,11 +27,11 @@ const getSpeedCyclic = (position: number): number => {
   const angle = position * (2 * Math.PI) / 2;
   // The peak of a standard cosine function is 1
   const sine = Math.sin(angle);
-  return sine * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
+  return sine * (SPEED_CONSTANTS.LOOP_CAP - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 };
 
 const getSpeedLinear = (position: number): number | null => {
-  return position * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
+  return position * (SPEED_CONSTANTS.LOOP_CAP - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 }
 
 const getLoopSpeed = (position: number, controlType: ControlType): number | null => {
@@ -170,34 +170,38 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
 
   return (
     <div>
-      <button id="loop-button" className={ playControlType ? `${playControlType}-loop` : `no-loop`} onClick={() => {
+      <div id="loop-button" className={ playControlType === "manual" ? "control-manual" : `looping control-${playControlType}`} onClick={() => {
         // Toggle between no loop and bouncy loop
         setPlayControlType(playControlType === "manual" ? "bouncyLoop" : "manual");
         if (playSpeed === null) {
           // The value shouldn't matter, as it's about to be overwritten as a result
           setPlaySpeed(SPEED_CONSTANTS.MIN);
         }
-      }}>Loop</button>
+      }}>Loop</div>
       <div id="speed-mode-buttons">
         <SpeedModeButton modeType={"rewind"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
         <SpeedModeButton modeType={"pause"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
         <SpeedModeButton modeType={"play"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
         <SpeedModeButton modeType={"fastForward"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
       </div>
-      <SpeedSlider
-        playSpeed={playSpeed}
-        setPlaySpeed={setPlaySpeed}
-        playDirection={playDirection}
-        setPlayDirection={setPlayDirection}
-        controlType={playControlType}
-        setControlType={setPlayControlType}
-      />
-      <PositionSlider
-        currentFrame={currentFrame}
-        setCurrentFrame={setCurrentFrame}
-        frames={frames}
-        setControlType={setPlayControlType}
-      />
+      <div id="speed-slider-wrapper">
+        <SpeedSlider
+          playSpeed={playSpeed}
+          setPlaySpeed={setPlaySpeed}
+          playDirection={playDirection}
+          setPlayDirection={setPlayDirection}
+          controlType={playControlType}
+          setControlType={setPlayControlType}
+        />
+      </div>
+      <div id="position-slider-wrapper">
+        <PositionSlider
+          currentFrame={currentFrame}
+          setCurrentFrame={setCurrentFrame}
+          frames={frames}
+          setControlType={setPlayControlType}
+        />
+      </div>
     </div>
   );
 };

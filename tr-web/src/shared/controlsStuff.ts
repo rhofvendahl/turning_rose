@@ -1,14 +1,15 @@
 // NOTE: "Speed" throughout is always positive, and "direction" is a boolean where true=forward & false=backward
 
-const SPEED_MIN = 2;
-const SPEED_MAX = 40;
+const SPEED_MIN = 1;
+const SPEED_MAX = 30;
 
 export const SPEED_CONSTANTS = {
   MIN: SPEED_MIN,
   MAX: SPEED_MAX,
-  REWIND: (SPEED_MAX - SPEED_MIN) * .8,
-  PLAY: (SPEED_MAX - SPEED_MIN) * .2,
-  FAST_FORWARD: (SPEED_MAX - SPEED_MIN) * .8
+  REWIND: SPEED_MAX * .7,
+  PLAY: 6,
+  FAST_FORWARD: SPEED_MAX * .7,
+  LOOP_CAP: SPEED_MAX * .7
 }
 
 // Used mainly to tell ModeInput what to be; NOT a state.

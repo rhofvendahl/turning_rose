@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Frame } from "../hooks/useFrame";
 import { ControlType } from "../shared/controlsStuff";
 
-import "./SpeedSlider.css";
+import "./Slider.css";
 
 const PositionSlider = ({ currentFrame, setCurrentFrame, frames, setControlType }: {
   currentFrame: Frame | null,

@@ -8,9 +8,9 @@
 .mode-button {
     position: absolute;
     /* 'left' value set in component */
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
     background-color:  #222222;
     transform: translateX(-50%);
     bottom: 10px;
