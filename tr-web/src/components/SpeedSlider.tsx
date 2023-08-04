@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 import { SPEED_CONSTANTS, LoopType, SNAP_FROM, speedDirectionToSliderValue, sliderValueToSpeedDirection } from "../shared/speedStuff"
 
-import './SpeedSlider.css';
+import "./SpeedSlider.css";
 
 const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, setLoopType }: {
   playSpeed: number | null,
@@ -19,7 +19,7 @@ const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection,
   }, [playSpeed, playDirection]);
   return (
     <input id="speed-slider"
-      type='range'
+      type="range"
         // min/max covers only legitimate speed values, skipping past "illegal" stopped values
         min={speedDirectionToSliderValue(SPEED_CONSTANTS.MAX, false)}
         max={speedDirectionToSliderValue(SPEED_CONSTANTS.MAX, true)}

@@ -1,10 +1,10 @@
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { IconDefinition, faBackward, faPause, faPlay, faForward } from '@fortawesome/free-solid-svg-icons';
+import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { IconDefinition, faBackward, faPause, faPlay, faForward } from "@fortawesome/free-solid-svg-icons";
 
-import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, LoopType } from '../shared/speedStuff';
+import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, LoopType } from "../shared/speedStuff";
 
-import './SpeedModeButton.css';
+import "./SpeedModeButton.css";
 
 // Get relative position along slider as a value with range [0, 100]
 const getButtonPosition = (speed: number | null, direction: boolean): number => {

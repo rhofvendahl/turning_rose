@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import React, { useEffect, useState, useRef } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 
-import './App.css';
-import ViewFrame from './components/ViewFrame';
-import Controls from './components/Controls';
-import { useFrame, Frame } from './hooks/useFrame';
+import "./App.css";
+import ViewFrame from "./components/ViewFrame";
+import Controls from "./components/Controls";
+import { useFrame, Frame } from "./hooks/useFrame";
 
-// This doesn't seem ideal, but even useEffect with empty inputs within App seems to run twice over the app's lifecycle - no good.
+// This doesn"t seem ideal, but even useEffect with empty inputs within App seems to run twice over the app"s lifecycle - no good.
 let useFrameDidRun = false;
 
 const App = () => {
@@ -29,11 +29,11 @@ const App = () => {
   }, []);
   
   return (
-    <div id='content-container'>
-      <div id='controls-wrapper'>
+    <div id="content-container">
+      <div id="controls-wrapper">
         <Controls frames={frames} currentFrame={currentFrame} setCurrentFrame={setCurrentFrame} />
       </div>
-      <Canvas id='canvas'>
+      <Canvas id="canvas">
         <ambientLight intensity={1} />
         <OrbitControls />
        { currentFrame && <ViewFrame frame={currentFrame} /> }
