@@ -2,7 +2,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition, faBackward, faPause, faPlay, faForward } from "@fortawesome/free-solid-svg-icons";
 
-import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, LoopType } from "../shared/speedStuff";
+import { SPEED_CONSTANTS, ModeInputType, speedDirectionToSliderValue, sliderValueToSpeedDirection, ControlType } from "../shared/speedStuff";
 
 import "./SpeedModeButton.css";
 
@@ -16,11 +16,11 @@ const getButtonPosition = (speed: number | null, direction: boolean): number => 
   return (sliderValueNormalized + 1) * 50;
 };
 
-const SpeedModeButton = ({ modeType, setPlaySpeed, setPlayDirection, setLoopType }: {
+const SpeedModeButton = ({ modeType, setPlaySpeed, setPlayDirection, setControlType }: {
   modeType: ModeInputType,
   setPlaySpeed: (speed: number | null) => void,
   setPlayDirection: (direction: boolean) => void,
-  setLoopType: (type: LoopType) => void,
+  setControlType: (type: ControlType) => void,
 }) => {
   let speed: number | null;
   let direction: boolean;
@@ -54,7 +54,7 @@ const SpeedModeButton = ({ modeType, setPlaySpeed, setPlayDirection, setLoopType
         style={{ "left": `${getButtonPosition(speed, direction)}%` }}
         className="mode-button"
         onClick={() => {
-          setLoopType(null);
+          setControlType("manual");
           setPlaySpeed(speed);
           setPlayDirection(direction);
         }}

@@ -14,19 +14,12 @@ export const SPEED_CONSTANTS = {
 // Used mainly to tell ModeInput what to be; NOT a state.
 export type ModeInputType = 'rewind' | 'pause' | 'play' | 'fastForward';
 
-// values for playLoopType state. null indicates non-loop manual control
-export type LoopType = 'bouncy' | 'cyclic' | 'linear' | null;
-
-// NOTE: I'm tempted to combine ModeInputType and LoopType into SpeedMode or something, but
-// a) I think ModeInputType should have to do with setting the speed value, but speed should be a simple value
-// b) That's getting ahead of myself / not currently necessary
+// values for playControlType state. null indicates non-loop manual control
+export type ControlType = 'bouncyLoop' | 'cyclicLoop' | 'linearLoop' | 'manual';
 
 // The number of frames that must be loaded before play starts
 // Constant for now; might want to make it dependent on internet speed or something, later
 export const LOADED_THRESHOLD = 5;
-
-// How close speed slider should be to 0 before snapping there
-export const SNAP_FROM = 4;
 
 export const speedDirectionToSliderValue = (speed: number | null, direction: boolean): number => {
   if (speed === null) {

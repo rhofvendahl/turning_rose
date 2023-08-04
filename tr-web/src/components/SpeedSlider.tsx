@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 
-import { SPEED_CONSTANTS, LoopType, SNAP_FROM, speedDirectionToSliderValue, sliderValueToSpeedDirection } from "../shared/speedStuff"
+import { SPEED_CONSTANTS, ControlType, speedDirectionToSliderValue, sliderValueToSpeedDirection } from "../shared/speedStuff"
 
 import "./SpeedSlider.css";
 
-const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, setLoopType }: {
+const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection, setControlType }: {
   playSpeed: number | null,
   setPlaySpeed: (speed: number | null) => void,
   playDirection: boolean,
   setPlayDirection: (direction: boolean) => void,
-  setLoopType: (type: LoopType) => void,
+  setControlType: (type: ControlType) => void,
 }) => {
   const [sliderValue, setSliderValue] = useState(speedDirectionToSliderValue(playSpeed, playDirection));
   useEffect(() => {
@@ -30,15 +30,7 @@ const SpeedSlider = ({ playSpeed, setPlaySpeed, playDirection, setPlayDirection,
         const [speed, direction] = sliderValueToSpeedDirection(value);
         setPlaySpeed(speed);
         setPlayDirection(direction);
-        setLoopType(null);
-      }}
-      onMouseUp={() => {
-        // Snap to up if appropriate
-        if (Math.abs(sliderValue) < SNAP_FROM) {
-          console.log("Snapping to paused");
-          setPlaySpeed(null);
-          setPlayDirection(true);
-          }
+        setControlType("manual");
       }}
     />
   );

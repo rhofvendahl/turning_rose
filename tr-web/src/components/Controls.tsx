@@ -5,7 +5,7 @@ import SpeedSlider from "./SpeedSlider";
 import SpeedModeButton from "./SpeedModeButton";
 
 import "./Controls.css";
-import { SPEED_CONSTANTS, LoopType, LOADED_THRESHOLD } from "../shared/speedStuff";
+import { SPEED_CONSTANTS, ControlType, LOADED_THRESHOLD } from "../shared/speedStuff";
 
 // GENERAL NOTE: "Speed" throughout is always positive, and "direction" is a boolean where true=forward & false=backward
 
@@ -29,30 +29,30 @@ const getSpeedCyclic = (position: number): number => {
   return sine * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 };
 
-const getSpeedLinear = (position: number): number => {
+const getSpeedLinear = (position: number): number | null => {
   return position * (SPEED_CONSTANTS.MAX - SPEED_CONSTANTS.MIN) + SPEED_CONSTANTS.MIN;
 }
 
-const getLoopSpeed = (position: number, controlType: LoopType): number => {
+const getLoopSpeed = (position: number, controlType: ControlType): number | null => {
   switch (controlType) {
-    case "bouncy":
+    case "bouncyLoop":
       return getSpeedBouncy(position);
-    case "cyclic":
+    case "cyclicLoop":
       return getSpeedCyclic(position);
-    case "linear":
+    case "linearLoop":
       return getSpeedLinear(position);
     // This shouldn"t happen
-    case null:
-      return 0;
+    case "manual":
+      return null;
   }
 }
 
-const getNewSpeedDirection = ({ frameIndex, nFrames, prevSpeed, prevDirection, loopType }: {
+const getNewSpeedDirection = ({ frameIndex, nFrames, prevSpeed, prevDirection, controlType }: {
   frameIndex: number,
   nFrames: number,
   prevSpeed: number,
   prevDirection: boolean,
-  loopType: LoopType,
+  controlType: ControlType,
 }): [number | null, boolean] => {
   // Position 0 if 0 or 1 frames
   const position = nFrames > 1 ? frameIndex / (nFrames - 1) : 0;
@@ -60,14 +60,14 @@ const getNewSpeedDirection = ({ frameIndex, nFrames, prevSpeed, prevDirection, l
   const atEnd = frameIndex >= nFrames - 1;
 
   const reachedTerminus = prevDirection && atEnd || !prevDirection && atStart;
-  if (loopType === null) {
+  if (controlType === "manual") {
     // Stop if appropriate
     if (reachedTerminus) {
       return [null, prevDirection];
     }
     return [prevSpeed, prevDirection];
   }
-  const speed = getLoopSpeed(position, loopType);
+  const speed = getLoopSpeed(position, controlType);
   // Since it"s a loop, be ready to turn around
   const direction = reachedTerminus ? !prevDirection : prevDirection;
   return [speed, direction];
@@ -102,7 +102,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
   // true is forward, false is back
   const [playDirection, setPlayDirection] = useState<boolean>(true);
   // NOTE: Probably will change this to speedControlType
-  const [playLoopType, setPlayLoopType] = useState<LoopType>("bouncy");
+  const [playControlType, setPlayControlType] = useState<ControlType>("bouncyLoop");
 
   // This allows access to the latest frame from within a timeout function
   const currentFrameRef = useRef(currentFrame);
@@ -138,7 +138,7 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
           nFrames: frames.length,
           prevSpeed: playSpeed,
           prevDirection: playDirection,
-          loopType: playLoopType,
+          controlType: playControlType,
         });
         if (speed === null) {
           setPlaySpeed(null);
@@ -164,26 +164,26 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
 
   return (
     <div>
-      <button id="loop-button" className={ playLoopType ? `${playLoopType}-loop` : `no-loop`} onClick={() => {
+      <button id="loop-button" className={ playControlType ? `${playControlType}-loop` : `no-loop`} onClick={() => {
         // Toggle between no loop and bouncy loop
-        setPlayLoopType(playLoopType ? null : "bouncy");
+        setPlayControlType(playControlType === "manual" ? "bouncyLoop" : "manual");
         if (playSpeed === null) {
           // The value shouldn't matter, as it's about to be overwritten as a result
           setPlaySpeed(SPEED_CONSTANTS.MIN);
         }
       }}>Loop</button>
       <div id="speed-mode-buttons">
-        <SpeedModeButton modeType={"rewind"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
-        <SpeedModeButton modeType={"pause"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
-        <SpeedModeButton modeType={"play"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
-        <SpeedModeButton modeType={"fastForward"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
+        <SpeedModeButton modeType={"rewind"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
+        <SpeedModeButton modeType={"pause"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
+        <SpeedModeButton modeType={"play"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
+        <SpeedModeButton modeType={"fastForward"} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setControlType={setPlayControlType}/>
       </div>
       <SpeedSlider
         playSpeed={playSpeed}
         setPlaySpeed={setPlaySpeed}
         playDirection={playDirection}
         setPlayDirection={setPlayDirection}
-        setLoopType={setPlayLoopType}
+        setControlType={setPlayControlType}
       />
     </div>
   );
