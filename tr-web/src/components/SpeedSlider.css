@@ -1,9 +1,4 @@
-input {
+#speed-slider {
     width: 100%;
-}
-
-#label {
-    width: 100%;
-    text-align: center;
-    color: white;
+    margin: 0;
 }

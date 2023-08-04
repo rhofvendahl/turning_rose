@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { Frame } from '../hooks/useFrame';
 import SpeedSlider from './SpeedSlider';
+import SpeedModeButton from "./SpeedModeButton";
 
 import './Controls.css';
 import { SPEED_CONSTANTS, LoopType, LOADED_THRESHOLD } from '../shared/speedStuff';
@@ -163,23 +164,27 @@ const Controls = ({ frames, currentFrame, setCurrentFrame }: {
 
   return (
     <div>
-      <div id='buttons-container'>
-        <button id="loop-button" className={ playLoopType ? `${playLoopType}-loop` : `no-loop`} onClick={() => {
-          // Toggle between no loop and bouncy loop
-          setPlayLoopType(playLoopType ? null : 'bouncy');
+      <button id="loop-button" className={ playLoopType ? `${playLoopType}-loop` : `no-loop`} onClick={() => {
+        // Toggle between no loop and bouncy loop
+        setPlayLoopType(playLoopType ? null : 'bouncy');
+        if (playSpeed === null) {
           // The value shouldn't matter, as it's about to be overwritten as a result
-          setPlaySpeed(SPEED_CONSTANTS.PLAY);
-        }}>Loop</button>
+          setPlaySpeed(SPEED_CONSTANTS.MIN);
+        }
+      }}>Loop</button>
+      <div id="speed-mode-buttons">
+        <SpeedModeButton modeType={'rewind'} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
+        <SpeedModeButton modeType={'pause'} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
+        <SpeedModeButton modeType={'play'} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
+        <SpeedModeButton modeType={'fastForward'} setPlaySpeed={setPlaySpeed} setPlayDirection={setPlayDirection} setLoopType={setPlayLoopType}/>
       </div>
-      <div id='slider-container'>
-        <SpeedSlider
-          playSpeed={playSpeed}
-          setPlaySpeed={setPlaySpeed}
-          playDirection={playDirection}
-          setPlayDirection={setPlayDirection}
-          setLoopType={setPlayLoopType}
-        />
-      </div>
+      <SpeedSlider
+        playSpeed={playSpeed}
+        setPlaySpeed={setPlaySpeed}
+        playDirection={playDirection}
+        setPlayDirection={setPlayDirection}
+        setLoopType={setPlayLoopType}
+      />
     </div>
   );
 };

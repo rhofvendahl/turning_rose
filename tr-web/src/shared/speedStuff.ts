@@ -12,7 +12,7 @@ export const SPEED_CONSTANTS = {
 }
 
 // Used mainly to tell ModeInput what to be; NOT a state.
-export type ModeInputType = 'rewind' | 'pause' | 'play' | 'fast-forward';
+export type ModeInputType = 'rewind' | 'pause' | 'play' | 'fastForward';
 
 // values for playLoopType state. null indicates non-loop manual control
 export type LoopType = 'bouncy' | 'cyclic' | 'linear' | null;
